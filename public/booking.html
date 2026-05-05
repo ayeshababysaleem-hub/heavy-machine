@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Booking</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/register.html">Register</a>
+          <a href="/login.html">Login</a>
+          <a href="/dashboard.html">Machinery</a>
+          <a href="/contact.html">Contact</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="padding:40px 20px;max-width:720px;margin:0 auto">
+      <div class="card">
+        <h2>Booking Details</h2>
+        <p id="machineInfo" style="color:var(--muted)"></p>
+        <form id="bookingForm">
+          <input name="machineId" type="hidden" />
+          <label>Your full name
+            <input name="name" type="text" required />
+          </label>
+          <label>Your email
+            <input name="email" type="email" required />
+          </label>
+          <label>CNIC / ID number
+            <input name="cnic" type="text" placeholder="e.g., 12345-6789012-3" required />
+            <small style="color:#94a3b8;display:block;margin-top:4px">Format: XXXXX-XXXXXXX-X (13 digits total). Last digit: Odd=Male, Even=Female</small>
+          </label>
+          <label>Phone number
+            <input name="phone" type="tel" placeholder="e.g., 03001234567" required />
+            <small style="color:#94a3b8;display:block;margin-top:4px">Valid formats: 03XX XXXXXXX or 923XX XXXXXX or 3XX XXXXXX</small>
+          </label>
+          <label>Address
+            <input name="address" type="text" required />
+          </label>
+          <label>Start date (YYYY-MM-DD)
+            <input name="startDate" type="date" required />
+          </label>
+          <label>Duration (days)
+            <input name="durationDays" type="number" min="1" required />
+          </label>
+          <!-- Booking location removed per admin request -->
+          <div style="margin-top:12px"><button type="submit">Proceed to Payment</button></div>
+        </form>
+        <div id="result" style="margin-top:12px"></div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+
+    <!-- Modal for alerts -->
+    <div id="alertModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+      <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+        <h3 id="alertTitle" style="margin:0 0 12px 0;color:#e6eef8">Message</h3>
+        <p id="alertMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Message</p>
+        <div style="display:flex;justify-content:flex-end">
+          <button id="alertOk" style="padding:10px 24px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Styled alert modal
+    function showAlert(title, message){
+      return new Promise((resolve)=>{
+        const modal = document.getElementById('alertModal');
+        const titleEl = document.getElementById('alertTitle');
+        const msgEl = document.getElementById('alertMessage');
+        const okBtn = document.getElementById('alertOk');
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        modal.style.display = 'flex';
+        const handle = ()=>{ modal.style.display='none'; okBtn.removeEventListener('click', handle); resolve(); };
+        okBtn.addEventListener('click', handle);
+      });
+    }
+    // prefill machine id from query and user info if available
+    const params = new URLSearchParams(location.search);
+    const machineId = params.get('machineId');
+    if (machineId) document.querySelector('[name=machineId]').value = machineId;
+
+    // show machine info if machineId present
+    async function loadMachineInfo(){
+      const mid = document.querySelector('[name=machineId]').value;
+      const infoEl = document.getElementById('machineInfo');
+      if (!mid){ infoEl.textContent = ''; return }
+      try{
+        const r = await fetch('/api/machines/' + encodeURIComponent(mid));
+        if (!r.ok){ infoEl.textContent = ''; return }
+        const m = await r.json();
+        const price = (typeof m.price !== 'undefined' && m.price !== null) ? Number(m.price) : 0;
+        infoEl.innerHTML = `<strong>${m.name || 'Unnamed machine'}</strong> — ${m.model || ''} — ₨ ${price.toFixed(2)}`;
+      }catch(e){ console.error('load machine info failed', e); infoEl.textContent = ''; }
+    }
+    loadMachineInfo();
+
+    async function tryPrefillUser(){
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try{
+        const r = await fetch('/api/me', { headers: { Authorization: 'Bearer '+token } });
+        if (!r.ok) return;
+        const u = await r.json();
+        if (u.name) document.querySelector('[name=name]').value = u.name;
+        if (u.email) document.querySelector('[name=email]').value = u.email;
+      }catch(e){ console.error('prefill user failed', e) }
+    }
+    tryPrefillUser();
+
+    document.getElementById('bookingForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const f = e.target;
+      
+      // Validate CNIC format (13 digits)
+      const cnic = f.cnic.value.trim();
+      const cnicDigits = cnic.replace(/\D/g, '');
+      if (cnicDigits.length !== 13) {
+        await showAlert('Invalid CNIC Number', 'CNIC must be exactly 13 digits. Example: 12345-6789012-3');
+        return;
+      }
+      
+      // Check last digit for gender (optional validation)
+      const lastDigit = parseInt(cnicDigits[12]);
+      const gender = lastDigit % 2 === 1 ? 'Male' : 'Female';
+      console.log('CNIC Gender:', gender);
+      
+      // Validate phone number
+      const phone = f.phone.value.trim();
+      const phoneDigits = phone.replace(/\D/g, '');
+      const validPak = (phoneDigits.length === 11 && phoneDigits.startsWith('03')) ||
+                       (phoneDigits.length === 12 && phoneDigits.startsWith('923') && phoneDigits[2] === '3') ||
+                       (phoneDigits.length === 10 && phoneDigits.startsWith('3'));
+      
+      if (!validPak) {
+        await showAlert('Invalid Phone Number', 'Valid Pakistan phone formats:\n• 03XX XXXXXXX (11 digits)\n• 923X XXXXXXX (12 digits)\n• 3XX XXXXXX (10 digits)');
+        return;
+      }
+
+      const body = {
+        machineId: f.machineId.value,
+        startDate: f.startDate.value,
+        durationDays: Number(f.durationDays.value),
+        name: f.name.value.trim(),
+        email: f.email.value.trim(),
+        cnic: f.cnic.value.trim(),
+        phone: f.phone.value.trim(),
+        address: f.address.value.trim()
+      };
+      // enrich booking with machine details (name/model/price) and store, then redirect
+      (async function(){
+        try{
+          if (body.machineId){
+            try{
+              const r = await fetch('/api/machines/' + encodeURIComponent(body.machineId));
+              if (r.ok){ const m = await r.json(); body.machineName = m.name || ''; body.machineModel = m.model || ''; body.machinePrice = typeof m.price !== 'undefined' && m.price !== null ? Number(m.price) : null; }
+            }catch(e){ /* ignore machine fetch errors, proceed with what we have */ }
+          }
+          sessionStorage.setItem('pendingBooking', JSON.stringify(body));
+          localStorage.setItem('pendingBooking', JSON.stringify(body));
+          location = '/payment-details.html';
+        }catch(err){ console.error('failed to store pending booking', err); const resEl = document.getElementById('result'); resEl.textContent = 'Unable to proceed to payment'; }
+      })();
+    });
+  </script>
+</body>
+</html>

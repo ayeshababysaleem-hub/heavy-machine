@@ -1,0 +1,183 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Payment Details</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    /* Payment method radios: keep input and label on one line */
+    #methods label { display: flex; align-items: center; gap: 12px; padding: 8px 0; cursor: pointer; }
+    #methods input[type="radio"] { width: 18px; height: 18px; margin: 0; flex: 0 0 auto; }
+    #methods label span { display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/dashboard.html">Dashboard</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="padding:40px 20px;max-width:900px;margin:0 auto">
+      <div class="card">
+        <h2 style="margin-top:0">Payment Details</h2>
+        <div id="detailsArea">Loading...</div>
+        <div style="margin-top:18px">
+          <div id="methods" style="margin-bottom:12px">
+            <p style="margin:6px 0 8px 0"><strong>Select Payment Method</strong></p>
+            <label style="display:block;margin-bottom:6px"><input type="radio" name="pmethod" value="card" /> Credit/Debit Card</label>
+            <label style="display:block;margin-bottom:6px"><input type="radio" name="pmethod" value="jazzcash" /> JazzCash</label>
+            <label style="display:block;margin-bottom:6px"><input type="radio" name="pmethod" value="easypaisa" /> EasyPaisa</label>
+          </div>
+          <button id="confirmBtn" style="background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;padding:12px 20px;border-radius:10px;border:0;cursor:pointer">Confirm Payment</button>
+          <a href="/booking.html" style="margin-left:12px;color:var(--muted)">Back to booking</a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+  </div>
+
+  <script>
+    function createModals(){
+      if (document.getElementById('alertModal')) return;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `
+      <div id="alertModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+        <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+          <h3 id="alertTitle" style="margin:0 0 12px 0;color:#e6eef8">Message</h3>
+          <p id="alertMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Operation complete.</p>
+          <div style="display:flex;justify-content:flex-end">
+            <button id="alertOk" style="padding:10px 24px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">OK</button>
+          </div>
+        </div>
+      </div>
+      `;
+      document.body.appendChild(wrapper);
+    }
+    function showAlert(title, message){
+      return new Promise((resolve)=>{
+        createModals();
+        const modal = document.getElementById('alertModal');
+        const titleEl = document.getElementById('alertTitle');
+        const msgEl = document.getElementById('alertMessage');
+        const okBtn = document.getElementById('alertOk');
+        titleEl.textContent = title; msgEl.textContent = message; modal.style.display = 'flex';
+        const handle = ()=>{ modal.style.display='none'; okBtn.removeEventListener('click', handle); resolve(); };
+        okBtn.addEventListener('click', handle);
+      });
+    }
+
+    // format currency as PKR
+    function formatPKR(n){ return '₨ ' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+    // Read booking from localStorage (preferred) then sessionStorage fallback
+    function readBookingStored(){
+      try{
+        const rawLocal = localStorage.getItem('pendingBooking');
+        if (rawLocal) return JSON.parse(rawLocal);
+      }catch(e){}
+      try{
+        const rawSess = sessionStorage.getItem('pendingBooking');
+        if (rawSess) return JSON.parse(rawSess);
+      }catch(e){}
+      return null;
+    }
+
+    // fallback read from query string
+    function readQuery(){
+      const p = new URLSearchParams(location.search);
+      const machineId = p.get('machineId'); if (!machineId) return null;
+      return {
+        machineId,
+        startDate: p.get('startDate') || new Date().toISOString().slice(0,10),
+        durationDays: p.get('durationDays') || '1'
+      };
+    }
+
+    (async function(){
+      const details = document.getElementById('detailsArea');
+      const confirmBtn = document.getElementById('confirmBtn');
+      confirmBtn.disabled = true;
+      let booking = readBookingStored() || readQuery();
+      if (!booking){ details.innerHTML = '<p>No booking found. Start from the booking page.</p>'; return }
+      details.innerHTML = '<p>Loading machine information...</p>';
+      try{
+        const r = await fetch('/api/machines/' + encodeURIComponent(booking.machineId));
+        let m = null;
+        if (!r.ok){
+          // fallback: try to use embedded booking values
+          if (booking && (booking.machineName || booking.machineModel || booking.machinePrice !== undefined)){
+            m = { name: booking.machineName || '', model: booking.machineModel || '', price: booking.machinePrice };
+          } else {
+            // try fetching full machines list and find by id
+            try{
+              const lr = await fetch('/api/machines');
+              if (lr.ok){ const list = await lr.json(); if (Array.isArray(list.data)) m = list.data.find(x=>x.id===booking.machineId) || null; }
+            }catch(e){ /* ignore */ }
+          }
+          if (!m) { const txt = await r.text().catch(()=>'' ); details.innerHTML = '<p>Machine not found. ('+r.status+')</p><pre style="color:var(--muted)">'+txt+'</pre>'; return }
+        } else {
+          m = await r.json();
+        }
+          // prefer values embedded in booking (from booking page) if present
+          const price = (typeof booking.machinePrice !== 'undefined' && booking.machinePrice !== null) ? Number(booking.machinePrice) : (Number(m.price) || 0);
+          const nameVal = booking.machineName || m.name || 'Unnamed machine';
+          const modelVal = booking.machineModel || m.model || '';
+          const days = Number(booking.durationDays) || 1;
+          const total = price * days;
+          // Render only the requested fields (no customer info)
+          details.innerHTML = `
+            <label>Machine Name
+              <input value="${nameVal}" disabled style="display:block;width:100%;padding:10px;margin-top:8px" />
+            </label>
+            <label>Machine Model
+              <input value="${modelVal}" disabled style="display:block;width:100%;padding:10px;margin-top:8px" />
+            </label>
+            <label>Rental Duration (days)
+              <input id="durationInput" value="${days}" type="number" min="1" style="display:block;width:100%;padding:10px;margin-top:8px" />
+            </label>
+            <label>Price Per Day
+              <input id="priceInput" value="${formatPKR(price)}" disabled style="display:block;width:100%;padding:10px;margin-top:8px" />
+            </label>
+            <label>Total Price
+              <input id="totalInput" value="${formatPKR(total)}" disabled style="display:block;width:100%;padding:10px;margin-top:8px" />
+            </label>
+          `;
+        // enable confirm now
+        confirmBtn.disabled = false;
+        const durationInput = document.getElementById('durationInput');
+        const totalInput = document.getElementById('totalInput');
+        // recalc total when duration changes
+        if (durationInput){
+          durationInput.addEventListener('input', ()=>{
+            const newDays = Math.max(1, parseInt(durationInput.value || '1', 10));
+            const newTotal = newDays * price;
+            totalInput.value = formatPKR(newTotal);
+          });
+        }
+
+        confirmBtn.addEventListener('click', async ()=>{
+          const sel = document.querySelector('input[name="pmethod"]:checked');
+          if (!sel){ await showAlert('Error','Please select a payment method'); return }
+          booking.paymentMethod = sel.value;
+          // capture possibly-updated duration
+          if (durationInput){ booking.durationDays = Number(durationInput.value) || 1 }
+          // save booking for payment flow (sessionStorage is used by payment.html)
+          try{ localStorage.setItem('pendingBooking', JSON.stringify(booking)); }catch(e){}
+          try{ sessionStorage.setItem('pendingBooking', JSON.stringify(booking)); }catch(e){}
+          location = '/payment.html';
+        });
+      }catch(err){ console.error(err); details.innerHTML = '<p>Network error while loading machine</p>'; }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin - Machines</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>#navLogin{display:none !important}</style>
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/dashboard.html">Dashboard</a>
+          <a href="/login.html" id="navLogin">Login</a>
+          <a href="#" id="navLogout" style="display:none;">Logout</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="padding-top:40px;">
+      <h2>Machines</h2>
+      <div id="machinesList">Loading...</div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+  </div>
+
+  <script>
+    function showAlert(title, message) {
+      return new Promise((resolve) => {
+        if (!document.getElementById('alertModal')) createModals();
+        const modal = document.getElementById('alertModal');
+        const titleEl = document.getElementById('alertTitle');
+        const msgEl = document.getElementById('alertMessage');
+        const okBtn = document.getElementById('alertOk');
+        titleEl.textContent = title; msgEl.textContent = message; modal.style.display = 'flex';
+        const handleOk = () => { cleanup(); resolve(); };
+        const cleanup = () => { modal.style.display = 'none'; okBtn.removeEventListener('click', handleOk); document.removeEventListener('keydown', handleEscape); };
+        const handleEscape = (e) => { if (e.key === 'Escape') handleOk(); };
+        okBtn.addEventListener('click', handleOk); document.addEventListener('keydown', handleEscape);
+      });
+    }
+    function showConfirm(title, message) {
+      return new Promise((resolve) => {
+        if (!document.getElementById('confirmModal')) createModals();
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmTitle');
+        const msgEl = document.getElementById('confirmMessage');
+        const okBtn = document.getElementById('confirmOk');
+        const cancelBtn = document.getElementById('confirmCancel');
+        titleEl.textContent = title; msgEl.textContent = message; modal.style.display = 'flex';
+        const handleOk = () => { cleanup(); resolve(true); };
+        const handleCancel = () => { cleanup(); resolve(false); };
+        const cleanup = () => { modal.style.display = 'none'; okBtn.removeEventListener('click', handleOk); cancelBtn.removeEventListener('click', handleCancel); document.removeEventListener('keydown', handleEscape); };
+        const handleEscape = (e) => { if (e.key === 'Escape') handleCancel(); };
+        okBtn.addEventListener('click', handleOk); cancelBtn.addEventListener('click', handleCancel); document.addEventListener('keydown', handleEscape);
+      });
+    }
+    function createModals(){
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `
+      <div id="confirmModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+        <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+          <h3 id="confirmTitle" style="margin:0 0 12px 0;color:#e6eef8">Confirm Action</h3>
+          <p id="confirmMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Are you sure?</p>
+          <div style="display:flex;gap:12px;justify-content:flex-end">
+            <button id="confirmCancel" style="padding:10px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#e6eef8;cursor:pointer;font-weight:600;transition:all 0.2s">Cancel</button>
+            <button id="confirmOk" style="padding:10px 18px;border-radius:8px;border:0;background:linear-gradient(90deg,#ef4444,#dc2626);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">Delete</button>
+          </div>
+        </div>
+      </div>
+      <div id="alertModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+        <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+          <h3 id="alertTitle" style="margin:0 0 12px 0;color:#e6eef8">Message</h3>
+          <p id="alertMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Operation complete.</p>
+          <div style="display:flex;justify-content:flex-end">
+            <button id="alertOk" style="padding:10px 24px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">OK</button>
+          </div>
+        </div>
+      </div>
+      `;
+      document.body.appendChild(wrapper);
+    }
+
+    async function loadMachines(){
+      const token = localStorage.getItem('token'); if (!token) return (location = '/login.html');
+      try{
+        const res = await fetch('/api/admin/machines', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) return await showAlert('Error','Failed to load machines: '+res.status);
+        const j = await res.json(); renderMachineList(j.data || []);
+      }catch(err){ console.error(err); await showAlert('Error','Network error while loading machines') }
+    }
+
+    function renderMachineList(list){
+      const out = document.getElementById('machinesList'); out.innerHTML='';
+      if (!list || list.length===0){ out.textContent='No machines found.'; return }
+      const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse';
+      const thead = document.createElement('thead'); thead.innerHTML = '<tr><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Owner</th><th style="text-align:left;padding:8px">Status</th><th style="text-align:left;padding:8px">Price</th><th style="text-align:left;padding:8px">Actions</th></tr>';
+      table.appendChild(thead); const tbody = document.createElement('tbody');
+      list.forEach(m=>{
+        const tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+        const price = (typeof m.price!=='undefined' && m.price!==null && m.price!=='')? ('₨ '+Number(m.price).toFixed(2)) : '—';
+        tr.innerHTML = `<td style="padding:8px">${m.name||'-'}</td><td style="padding:8px">${m.ownerId||'-'}</td><td style="padding:8px">${m.status||'-'}</td><td style="padding:8px">${price}</td>`;
+        const actionsTd = document.createElement('td'); actionsTd.style.padding='8px';
+        const approveBtn = document.createElement('button'); approveBtn.textContent='Approve'; approveBtn.style.marginRight='8px'; approveBtn.addEventListener('click', async ()=>{
+          const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
+          try{ const r = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'approve' }) }); if (!r.ok) return await showAlert('Error','Failed to approve'); await showAlert('Success','Machine approved'); loadMachines(); }catch(err){ console.error(err); await showAlert('Error','Network error') }
+        });
+        const rejectBtn = document.createElement('button'); rejectBtn.textContent='Reject'; rejectBtn.addEventListener('click', async ()=>{
+          const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
+          try{ const r = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'reject' }) }); if (!r.ok) return await showAlert('Error','Failed to reject'); await showAlert('Success','Machine rejected'); loadMachines(); }catch(err){ console.error(err); await showAlert('Error','Network error') }
+        });
+        actionsTd.appendChild(approveBtn); actionsTd.appendChild(rejectBtn);
+        tr.appendChild(actionsTd); tbody.appendChild(tr);
+      });
+      table.appendChild(tbody); out.appendChild(table);
+    }
+
+    const tkn = localStorage.getItem('token'); if (tkn) document.getElementById('navLogout').style.display='inline-block';
+    document.getElementById('navLogout').addEventListener('click', ()=>{ localStorage.removeItem('token'); location='/login.html' });
+
+    loadMachines();
+  </script>
+</body>
+</html>

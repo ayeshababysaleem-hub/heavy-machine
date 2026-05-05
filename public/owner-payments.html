@@ -1,0 +1,196 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Payments</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/dashboard.html">Dashboard</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="padding:40px 20px;max-width:1200px;margin:0 auto">
+      <div class="card">
+        <h2 style="margin-top:0">My Payments</h2>
+        <p>Payments received from bookings of your machines (10% commission goes to admin)</p>
+        <div style="margin-top:16px; display:flex; gap:20px; flex-wrap:wrap">
+          <div style="flex:1; min-width:200px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); padding:16px; border-radius:8px">
+            <div style="color:var(--muted); font-size:0.85rem">Total Revenue</div>
+            <div id="totalRevenue" style="font-size:1.8rem; font-weight:600; color:#10b981; margin-top:4px">₨ 0</div>
+          </div>
+          <div style="flex:1; min-width:200px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:16px; border-radius:8px">
+            <div style="color:var(--muted); font-size:0.85rem">Admin Commission (10%)</div>
+            <div id="adminCommission" style="font-size:1.8rem; font-weight:600; color:#ef4444; margin-top:4px">₨ 0</div>
+          </div>
+          <div style="flex:1; min-width:200px; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); padding:16px; border-radius:8px">
+            <div style="color:var(--muted); font-size:0.85rem">Net Earnings</div>
+            <div id="netEarnings" style="font-size:1.8rem; font-weight:600; color:#3b82f6; margin-top:4px">₨ 0</div>
+          </div>
+          <div style="flex:1; min-width:200px; background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); padding:16px; border-radius:8px">
+            <div style="color:var(--muted); font-size:0.85rem">Total Bookings</div>
+            <div id="totalBookings" style="font-size:1.8rem; font-weight:600; color:#fbbf24; margin-top:4px">0</div>
+          </div>
+        </div>
+        <div id="paymentsList" style="margin-top:24px">Loading...</div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+
+    <!-- Modal for alerts -->
+    <div id="alertModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+      <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+        <h3 id="alertTitle" style="margin:0 0 12px 0;color:#e6eef8">Message</h3>
+        <p id="alertMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Message</p>
+        <div style="display:flex;justify-content:flex-end">
+          <button id="alertOk" style="padding:10px 24px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function formatPKR(n){ return '₨ ' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function showAlert(title, message){
+      return new Promise((resolve)=>{
+        const modal = document.getElementById('alertModal');
+        const titleEl = document.getElementById('alertTitle');
+        const msgEl = document.getElementById('alertMessage');
+        const okBtn = document.getElementById('alertOk');
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        modal.style.display = 'flex';
+        const handle = ()=>{ modal.style.display='none'; okBtn.removeEventListener('click', handle); resolve(); };
+        okBtn.addEventListener('click', handle);
+      });
+    }
+
+    function fetchWithTimeout(url, options = {}, timeout = 10000) {
+      return Promise.race([
+        fetch(url, options),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), timeout))
+      ]);
+    }
+
+    (async function(){
+      const token = localStorage.getItem('token');
+      if (!token) return await showAlert('Error', 'Not logged in');
+      const payList = document.getElementById('paymentsList');
+      
+      try{
+        // decode JWT to get current user ID
+        const parts = token.split('.');
+        let userId = null;
+        if (parts.length >= 2){
+          try{ userId = JSON.parse(atob(parts[1])).id; }catch(e){}
+        }
+        if (!userId) return payList.innerHTML = '<p>Unable to identify user</p>';
+
+        // fetch all bookings
+        const br = await fetchWithTimeout('/api/bookings', { headers: { Authorization: 'Bearer ' + token } }, 10000);
+        if (!br.ok){ return payList.innerHTML = '<p>Failed to load bookings (HTTP ' + br.status + ')</p>'; }
+        let bdata = {};
+        try{
+          bdata = await br.json();
+        }catch(e){
+          console.error('Failed to parse bookings JSON:', e);
+          return payList.innerHTML = '<p>Failed to parse bookings data</p>';
+        }
+        const bookings = bdata.data || [];
+
+        // fetch all machines to identify owner's machines
+        const mr = await fetchWithTimeout('/api/machines', { headers: { Authorization: 'Bearer ' + token } }, 10000);
+        let ownerMachines = [];
+        if (mr.ok){
+          let mdata = {};
+          try{
+            mdata = await mr.json();
+          }catch(e){
+            console.error('Failed to parse machines JSON:', e);
+          }
+          const allMachines = mdata.data || [];
+          ownerMachines = allMachines.filter(m => m.ownerId === userId);
+        }else{
+          console.warn('Failed to fetch machines:', mr.status);
+        }
+        
+        const ownerMachineIds = ownerMachines.map(m => m.id);
+        
+        // filter bookings to show only those for owner's machines
+        const ownerBookings = bookings.filter(b => ownerMachineIds.includes(b.machineId));
+        
+        // calculate totals
+        let totalRevenue = 0;
+        ownerBookings.forEach(b => {
+          const machine = ownerMachines.find(m => m.id === b.machineId);
+          if (machine){
+            const price = Number(machine.price) || 0;
+            const days = Number(b.durationDays) || 1;
+            totalRevenue += price * days;
+          }
+        });
+
+        const adminCommission = totalRevenue * 0.1;
+        const netEarnings = totalRevenue - adminCommission;
+
+        // update summary cards
+        document.getElementById('totalRevenue').textContent = formatPKR(totalRevenue);
+        document.getElementById('adminCommission').textContent = formatPKR(adminCommission);
+        document.getElementById('netEarnings').textContent = formatPKR(netEarnings);
+        document.getElementById('totalBookings').textContent = ownerBookings.length;
+
+        if (ownerBookings.length === 0){ payList.innerHTML = '<p>No bookings yet</p>'; return; }
+
+        // render payments as a table
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginTop = '12px';
+        const thead = document.createElement('thead');
+        thead.innerHTML = '<tr style="border-bottom:1px solid rgba(255,255,255,0.1)"><th style="text-align:left;padding:12px">Machine</th><th style="text-align:left;padding:12px">Customer</th><th style="text-align:left;padding:12px">Booking Period</th><th style="text-align:left;padding:12px">Duration</th><th style="text-align:left;padding:12px">Price/Day</th><th style="text-align:left;padding:12px">Total Revenue</th><th style="text-align:left;padding:12px">Admin Commission</th><th style="text-align:left;padding:12px">Net Earnings</th></tr>';
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        ownerBookings.forEach(b => {
+          const machine = ownerMachines.find(m => m.id === b.machineId);
+          const price = machine ? (Number(machine.price) || 0) : 0;
+          const days = Number(b.durationDays) || 1;
+          const total = price * days;
+          const commission = total * 0.1;
+          const net = total - commission;
+
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+          tr.innerHTML = `
+            <td style="padding:12px"><strong>${machine ? machine.name : 'Unknown'}</strong></td>
+            <td style="padding:12px">${b.name || '—'}</td>
+            <td style="padding:12px">${b.startDate} → ${b.endDate}</td>
+            <td style="padding:12px">${days} day(s)</td>
+            <td style="padding:12px; text-align:right">${formatPKR(price)}</td>
+            <td style="padding:12px; text-align:right; color:#10b981; font-weight:600">${formatPKR(total)}</td>
+            <td style="padding:12px; text-align:right; color:#ef4444">${formatPKR(commission)}</td>
+            <td style="padding:12px; text-align:right; color:#3b82f6; font-weight:600">${formatPKR(net)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        payList.appendChild(table);
+      }catch(err){ 
+        console.error('Error:', err); 
+        payList.innerHTML = '<p style="color:#ef4444">Error: ' + (err.message || 'Unknown error') + '</p>'; 
+      }
+    })();
+  </script>
+</body>
+</html>

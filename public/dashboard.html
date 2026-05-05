@@ -1,0 +1,751 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Machinery</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    /* Force machines grid to 3 columns on wide screens, 2 on medium, 1 on small */
+    #machines { grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+    @media (max-width: 900px) { #machines { grid-template-columns: repeat(2, minmax(220px, 1fr)); } }
+    @media (max-width: 600px) { #machines { grid-template-columns: repeat(1, minmax(220px, 1fr)); } }
+  </style>
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/register.html" id="navRegister">Register</a>
+          <a href="/login.html" id="navLogin">Login</a>
+          <div id="navProfileWrapper" style="position:relative;display:inline-block;margin-left:auto;">
+            <a href="#" id="navProfile" style="display:none;padding:8px;border-radius:50%;background:rgba(255,255,255,0.08);"><span style="font-size:18px">👤</span></a>
+            <div id="profileDropdown" style="display:none;position:absolute;right:0;top:36px;background:var(--card);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px;min-width:180px;z-index:1000;">
+              <div id="profileName" style="font-weight:600;color:var(--text);"></div>
+              <div id="profileEmail" style="font-size:0.9rem;color:var(--muted);"></div>
+              <div id="profileRole" style="font-size:0.9rem;color:var(--muted);margin-top:4px;"></div>
+            </div>
+          </div>
+          <a href="#" id="navLogout" style="display:none;">Logout</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="display:flex;justify-content:center;padding-top:40px;">
+      <!-- User info card removed per request; keep hidden placeholders for scripts that expect these IDs -->
+      <div id="info" style="display:none"></div>
+      <button id="logout" style="display:none"></button>
+    </main>
+
+    <div id="adminBar" class="container" style="padding-top:12px;"></div>
+    <!-- search banner placed above machine list -->
+    <div id="searchBanner" style="width:100%;background:transparent;padding:24px 0;">
+      <div style="max-width:720px;margin:0 auto;display:flex;justify-content:center;">
+        <input id="search" placeholder="Search by type, model, location" style="width:100%;max-width:600px;padding:10px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);font-size:0.95rem;height:40px;background:var(--card);color:var(--text)" />
+        <button id="searchBtn" style="margin-left:8px;padding:10px 28px;border-radius:6px;border:0;background:var(--accent);color:#0f172a;cursor:pointer;font-weight:600;transition:all 0.2s;white-space:nowrap;font-size:0.95rem;height:40px">Search</button>
+      </div>
+    </div>
+    <main class="container" style="padding-top:20px;">
+      <section>
+        <h3>Available Machinery</h3>
+        <div id="ownerControls" style="margin-top:12px;display:none">
+          <button id="showAdd">Add Machine</button>
+          <form id="addForm" style="display:none;margin-top:8px;gap:8px">
+            <input name="name" placeholder="Name" style="padding:8px;border-radius:8px;border:1px solid #e6edf3;display:block;width:100%" />
+            <input name="type" placeholder="Type (e.g. Excavator)" style="padding:8px;border-radius:8px;border:1px solid #e6edf3;display:block;width:100%" />
+            <input name="price" type="number" step="0.01" placeholder="Price (per day) (PKR)" style="padding:8px;border-radius:8px;border:1px solid #e6edf3;display:block;width:100%" />
+            <input name="model" placeholder="Model (e.g. EX200)" style="padding:8px;border-radius:8px;border:1px solid #e6edf3;display:block;width:100%" />
+            <input name="location" placeholder="Location (city)" style="padding:8px;border-radius:8px;border:1px solid #e6edf3;display:block;width:100%" />
+            <input name="imageFile" type="file" accept="image/*" style="display:block;margin-top:8px" />
+            <input name="image" placeholder="Or image URL (optional)" style="padding:8px;border-radius:8px;border:1px solid #e6edf3;display:block;width:100%" />
+            <textarea name="description" placeholder="Description" style="padding:8px;border-radius:8px;border:1px solid #e6edf3;display:block;width:100%"></textarea>
+            <div style="margin-top:8px"><button type="button" id="addSubmit">Add</button> <button type="button" id="addCancel">Cancel</button></div>
+          </form>
+        </div>
+        <div id="machines" style="display:grid;gap:12px;margin-top:12px"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+      <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+        <h3 id="confirmTitle" style="margin:0 0 12px 0;color:#e6eef8">Confirm Action</h3>
+        <p id="confirmMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Are you sure?</p>
+        <div style="display:flex;gap:12px;justify-content:flex-end">
+          <button id="confirmCancel" style="padding:10px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#e6eef8;cursor:pointer;font-weight:600;transition:all 0.2s">Cancel</button>
+          <button id="confirmOk" style="padding:10px 18px;border-radius:8px;border:0;background:linear-gradient(90deg,#ef4444,#dc2626);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alertModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+      <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+        <h3 id="alertTitle" style="margin:0 0 12px 0;color:#e6eef8">Message</h3>
+        <p id="alertMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Operation complete.</p>
+        <div style="display:flex;justify-content:flex-end">
+          <button id="alertOk" style="padding:10px 24px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Format number as PKR currency
+    function formatPKR(n) { 
+      return '₨ ' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
+    }
+
+    // Styled alert modal
+    function showAlert(title, message) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('alertModal');
+        const titleEl = document.getElementById('alertTitle');
+        const msgEl = document.getElementById('alertMessage');
+        const okBtn = document.getElementById('alertOk');
+        
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        modal.style.display = 'flex';
+        
+        const handleOk = () => {
+          cleanup();
+          resolve();
+        };
+        const cleanup = () => {
+          modal.style.display = 'none';
+          okBtn.removeEventListener('click', handleOk);
+          document.removeEventListener('keydown', handleEscape);
+        };
+        const handleEscape = (e) => {
+          if (e.key === 'Escape') handleOk();
+        };
+        
+        okBtn.addEventListener('click', handleOk);
+        document.addEventListener('keydown', handleEscape);
+      });
+    }
+
+    // Custom confirmation modal
+    function showConfirm(title, message) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmTitle');
+        const msgEl = document.getElementById('confirmMessage');
+        const okBtn = document.getElementById('confirmOk');
+        const cancelBtn = document.getElementById('confirmCancel');
+        
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        modal.style.display = 'flex';
+        
+        const handleOk = () => {
+          cleanup();
+          resolve(true);
+        };
+        const handleCancel = () => {
+          cleanup();
+          resolve(false);
+        };
+        const cleanup = () => {
+          modal.style.display = 'none';
+          okBtn.removeEventListener('click', handleOk);
+          cancelBtn.removeEventListener('click', handleCancel);
+          document.removeEventListener('keydown', handleEscape);
+        };
+        const handleEscape = (e) => {
+          if (e.key === 'Escape') handleCancel();
+        };
+        
+        okBtn.addEventListener('click', handleOk);
+        cancelBtn.addEventListener('click', handleCancel);
+        document.addEventListener('keydown', handleEscape);
+      });
+    }
+
+    async function load() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        const card = document.getElementById('userInfoCard');
+        if (card) card.style.display = 'none';
+        return;
+      }
+      const res = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return (document.getElementById('info').textContent = 'Session invalid');
+      const user = await res.json();
+      const el = document.getElementById('info');
+      el.innerHTML = `<p>Name: ${user.name}</p><p>Email: ${user.email}</p><p>Role: ${user.role}</p>`;
+
+      // navigation adjustments: hide login/register, show logout and profile icon
+      const navRegister = document.getElementById('navRegister');
+      const navLogin = document.getElementById('navLogin');
+      const navLogout = document.getElementById('navLogout');
+      const navProfile = document.getElementById('navProfile');
+      const profileName = document.getElementById('profileName');
+      const profileEmail = document.getElementById('profileEmail');
+      const profileRole = document.getElementById('profileRole');
+      const profileDropdown = document.getElementById('profileDropdown');
+
+      if (navRegister) navRegister.style.display = 'none';
+      if (navLogin) navLogin.style.display = 'none';
+      if (navLogout) navLogout.style.display = 'inline-block';
+      if (navProfile) navProfile.style.display = 'inline-block';
+
+      if (profileName) profileName.textContent = user.name;
+      if (profileEmail) profileEmail.textContent = user.email;
+      if (profileRole) profileRole.textContent = `Role: ${user.role}`;
+
+      // logout click handler
+      if (navLogout) navLogout.addEventListener('click', () => {
+        localStorage.removeItem('token');
+        location = '/login.html';
+      });
+
+      // profile icon toggles dropdown
+      if (navProfile) {
+        navProfile.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (profileDropdown)
+            profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+      }
+      // hide info card for customers and owners so only machinery is visible
+      if (user.role === 'Customer' || user.role === 'Owner') {
+        const card = document.getElementById('userInfoCard');
+        if (card) card.style.display = 'none';
+      }
+      // expose user to other scripts for owner controls
+      if (window.setCurrentUser) window.setCurrentUser(user);
+
+      // hide info card for customers and owners so only machinery is visible
+      if (user.role === 'Customer' || user.role === 'Owner') {
+        const card = document.getElementById('userInfoCard');
+        if (card) card.style.display = 'none';
+      }
+      // expose user to other scripts for owner controls
+      if (window.setCurrentUser) window.setCurrentUser(user);
+      if (user.role === 'Owner') {
+        // render owner cards for bookings and payments management
+        const ownerCardsHtml = `
+          <div class="admin-card" data-action="own-bookings">
+            <div class="admin-card-icon">📅</div>
+            <h4>My Bookings</h4>
+            <p>View bookings for your machines</p>
+          </div>
+          <div class="admin-card" data-action="own-payments">
+            <div class="admin-card-icon">💳</div>
+            <h4>My Payments</h4>
+            <p>Track payments received</p>
+          </div>
+        `;
+        const ownerBar = document.getElementById('adminBar');
+        if (ownerBar) ownerBar.innerHTML = `<div class="admin-bar" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:stretch">${ownerCardsHtml}</div>`;
+        const ownerMain = document.createElement('div');
+        ownerMain.id = 'ownerMain';
+        ownerMain.className = 'owner-main';
+        ownerMain.innerHTML = `<div id="owner-list" style="margin-top:16px"></div>`;
+        const ownerBarEl = document.getElementById('adminBar');
+        if (ownerBarEl && ownerBarEl.parentNode) {
+          ownerBarEl.parentNode.insertBefore(ownerMain, ownerBarEl.nextSibling);
+        } else {
+          document.body.appendChild(ownerMain);
+        }
+        const attachOwnerHandlers = () => {
+          const bar = document.querySelector('#adminBar .admin-bar');
+          if (!bar) return;
+          const cards = bar.querySelectorAll('.admin-card');
+          cards.forEach(card => {
+            card.addEventListener('click', async () => {
+              const id = card.getAttribute('data-action');
+              const token = localStorage.getItem('token');
+              if (!token) return await showAlert('Error', 'Not authorized. Please log in.');
+              if (id === 'own-bookings') {
+                window.location = '/owner-bookings.html';
+              } else if (id === 'own-payments') {
+                window.location = '/owner-payments.html';
+              }
+            });
+          });
+        };
+        attachOwnerHandlers();
+      }
+
+      if (user.role === 'Admin') {
+        // render admin cards into the top-level admin bar (outside dashboard card)
+        const cardsHtml = `
+          <div class="admin-card" data-action="adm-allusers">
+            <div class="admin-card-icon">👨‍💼</div>
+            <h4>All Users</h4>
+            <p>Full user list</p>
+          </div>
+          <div class="admin-card" data-action="adm-owners">
+            <div class="admin-card-icon">👤</div>
+            <h4>Owners</h4>
+            <p>Owner accounts and verification</p>
+          </div>
+          <div class="admin-card" data-action="adm-customers">
+            <div class="admin-card-icon">👥</div>
+            <h4>Customers</h4>
+            <p>Customer accounts</p>
+          </div>
+          <div class="admin-card" data-action="adm-machines">
+            <div class="admin-card-icon">🚜</div>
+            <h4>Machines</h4>
+            <p>Manage and verify machine listings</p>
+          </div>
+          <div class="admin-card" data-action="adm-bookings">
+            <div class="admin-card-icon">📅</div>
+            <h4>Bookings</h4>
+            <p>View and manage bookings</p>
+          </div>
+          <div class="admin-card" data-action="adm-contacts">
+            <div class="admin-card-icon">✉️</div>
+            <h4>Contacts</h4>
+            <p>User messages</p>
+          </div>
+          <div class="admin-card" data-action="adm-payments">
+            <div class="admin-card-icon">💳</div>
+            <h4>Payments</h4>
+            <p>View and manage payments</p>
+          </div>
+        `;
+
+        const adminBar = document.getElementById('adminBar');
+        // Render admin cards in a 3-column grid so first three appear on one line
+        if (adminBar) adminBar.innerHTML = `<div class="admin-bar" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:stretch">${cardsHtml}</div>`;
+
+        // keep admin summary and list inside the dashboard card
+        const adminMain = document.createElement('div');
+        adminMain.id = 'adminMain';
+        adminMain.className = 'admin-main';
+        // Removed the Admin Summary badges section; only keep the admin list container
+        adminMain.innerHTML = `<div id="admin-list" style="margin-top:16px"></div>`;
+        // place adminMain in a visible area just after the adminBar so results show
+        const adminBarEl = document.getElementById('adminBar');
+        if (adminBarEl && adminBarEl.parentNode) {
+          adminBarEl.parentNode.insertBefore(adminMain, adminBarEl.nextSibling);
+        } else {
+          // fallback to appending into body
+          document.body.appendChild(adminMain);
+        }
+        // attach click handlers directly to admin cards (more reliable than global click delegation)
+        const attachAdminHandlers = () => {
+          const bar = document.querySelector('#adminBar .admin-bar');
+          if (!bar) return;
+          const cards = bar.querySelectorAll('.admin-card');
+          cards.forEach(card => {
+            card.addEventListener('click', async () => {
+              const id = card.getAttribute('data-action');
+              const token = localStorage.getItem('token');
+              if (!token) return await showAlert('Error', 'Not authorized. Please log in.');
+              if (id === 'adm-machines') {
+                // navigate to machines admin page
+                window.location = '/admin-machines.html';
+              } else if (id === 'adm-bookings') {
+                // navigate to bookings admin page
+                window.location = '/admin-bookings.html';
+              } else if (id === 'adm-owners' || id === 'adm-customers' || id === 'adm-allusers') {
+                // navigate to owners/customers/allusers admin pages
+                if (id === 'adm-owners') window.location = '/admin-owners.html';
+                else if (id === 'adm-customers') window.location = '/admin-customers.html';
+                else window.location = '/admin-users.html';
+              } else if (id === 'adm-contacts') {
+                // navigate to contacts admin page
+                window.location = '/admin-contacts.html';
+              } else if (id === 'adm-payments') {
+                // navigate to admin payments page
+                window.location = '/admin-payments.html';
+              }
+            });
+          });
+        };
+
+        // small helper to render payments (basic table)
+        function renderPaymentsList(list){
+          const out = document.getElementById('admin-list');
+          out.innerHTML = '';
+          if (!list || list.length === 0) { out.textContent = 'No payments found.'; return }
+          const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse'; table.style.marginTop='12px';
+          const thead = document.createElement('thead');
+          thead.innerHTML = '<tr>' +
+            '<th style="text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Booking ID</th>' +
+            '<th style="text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Machine</th>' +
+            '<th style="text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Customer</th>' +
+            '<th style="text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Period</th>' +
+            '<th style="text-align:right;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Revenue</th>' +
+            '<th style="text-align:right;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Commission</th>' +
+            '<th style="text-align:right;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Net</th>' +
+            '<th style="text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Status</th>' +
+          '</tr>';
+          table.appendChild(thead);
+          const tbody = document.createElement('tbody');
+          list.forEach(p => {
+            const tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+            tr.innerHTML = `
+              <td style="padding:10px">${p.id||'—'}</td>
+              <td style="padding:10px">${p.machineName||p.machineId||'—'}</td>
+              <td style="padding:10px">${p.customerName||p.customerEmail||'—'}</td>
+              <td style="padding:10px">${p.startDate} → ${p.endDate}</td>
+              <td style="padding:10px;text-align:right">${formatPKR(p.revenue)}</td>
+              <td style="padding:10px;text-align:right;color:#ef4444">${formatPKR(p.commission)}</td>
+              <td style="padding:10px;text-align:right;color:#3b82f6">${formatPKR(p.net)}</td>
+              <td style="padding:10px">${p.status||'—'}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          out.appendChild(table);
+        }
+
+        // attach handlers now that admin bar has been rendered
+        attachAdminHandlers();
+        // Ensure All Users navigates to a separate admin page for full details
+        const allUsersCard = document.querySelector('#adminBar .admin-card[data-action="adm-allusers"]');
+        if (allUsersCard) {
+          allUsersCard.addEventListener('click', () => {
+            window.location = '/admin-users.html';
+          });
+        }
+        // Admin summary badges removed — skip fetching/updating stats
+      }
+
+      function renderBookingsList(list){
+        const out = document.getElementById('admin-list');
+        out.innerHTML = '';
+        if (!list || list.length === 0) { out.textContent = 'No bookings found.'; return }
+        const table = document.createElement('table'); 
+        table.style.width='100%'; 
+        table.style.borderCollapse='collapse'; 
+        table.style.marginTop='12px';
+        const thead = document.createElement('thead'); 
+        thead.innerHTML = '<tr><th style="text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Machine ID</th><th style="text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Dates</th><th style="text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Customer</th><th style="text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Phone</th><th style="text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)">Duration</th></tr>';
+        table.appendChild(thead);
+        const tbody = document.createElement('tbody');
+        list.forEach(b => {
+          const tr = document.createElement('tr'); 
+          tr.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+          tr.innerHTML = `<td style="padding:10px">${b.machineId||'—'}</td><td style="padding:10px">${b.startDate} → ${b.endDate}</td><td style="padding:10px">${b.name||'—'}</td><td style="padding:10px">${b.phone||'—'}</td><td style="padding:10px">${b.durationDays} days</td>`;
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        out.appendChild(table);
+      }
+
+      function renderUserList(list, roleFilter){
+        const out = document.getElementById('admin-list');
+        out.innerHTML = '';
+        const filtered = roleFilter ? list.filter(u => u.role === roleFilter) : list;
+        if (filtered.length === 0) { out.textContent = 'No users found.'; return }
+        const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse';
+        const thead = document.createElement('thead'); thead.innerHTML = '<tr><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Email</th><th style="text-align:left;padding:8px">Role</th><th style="text-align:left;padding:8px">Verified</th></tr>';
+        table.appendChild(thead);
+        const tbody = document.createElement('tbody');
+        filtered.forEach(u => {
+          const tr = document.createElement('tr');
+          const verifiedText = u.verified ? 'Yes' : 'No';
+          tr.innerHTML = `<td style="padding:8px;border-top:1px solid rgba(255,255,255,0.02)">${u.name||'-'}</td><td style="padding:8px;border-top:1px solid rgba(255,255,255,0.02)">${u.email}</td><td style="padding:8px;border-top:1px solid rgba(255,255,255,0.02)">${u.role}</td><td style="padding:8px;border-top:1px solid rgba(255,255,255,0.02)">${verifiedText}</td>`;
+          // add verify button for unverified users
+          if (!u.verified){
+            const btnTd = document.createElement('td'); btnTd.style.padding='8px'; btnTd.style.borderTop='1px solid rgba(255,255,255,0.02)';
+            const verifyBtn = document.createElement('button'); verifyBtn.textContent = 'Verify'; verifyBtn.style.marginLeft='8px';
+            verifyBtn.addEventListener('click', async ()=>{
+              const token = localStorage.getItem('token');
+              if (!token) return await showAlert('Error', 'Not authorized. Please log in again.');
+              try{
+                let body = {};
+                if (u.role === 'Customer') {
+                  const cnic = prompt('Enter CNIC for this customer (required)');
+                  if (cnic === null) return; // cancelled
+                  if (!cnic) return await showAlert('Error', 'CNIC is required to verify customers');
+                  body.cnic = cnic;
+                }
+                const r = await fetch('/api/admin/users/'+u.id+'/verify', { method:'POST', headers: { 'authorization': 'Bearer '+token, 'content-type':'application/json' }, body: JSON.stringify(body) });
+                if (!r.ok){ const t = await r.text().catch(()=>''); return await showAlert('Error', 'Failed to verify user: '+r.status+' '+t) }
+                await showAlert('Success', 'User verified successfully');
+                // reload the users list (keep role filter if any)
+                const rer = await fetch('/api/admin/users', { headers: { Authorization: 'Bearer ' + token } });
+                if (rer.ok){ const j = await rer.json(); renderUserList(j.data, roleFilter); }
+              }catch(err){ console.error(err); await showAlert('Error', 'Network error while verifying user. Please try again.') }
+            });
+            // delete button
+            const delBtn = document.createElement('button'); delBtn.textContent = 'Delete'; delBtn.style.marginLeft='8px';
+            delBtn.addEventListener('click', async ()=>{
+              const ok = await showConfirm('Delete User', 'Delete user '+(u.email||u.name)+'? This action cannot be undone.'); if (!ok) return;
+              const token = localStorage.getItem('token'); if (!token) return alert('Not authorized');
+              try{
+                const r = await fetch('/api/admin/users/'+u.id, { method: 'DELETE', headers: { 'authorization':'Bearer '+token } });
+                if (!r.ok){ const t = await r.text().catch(()=>''); return await showAlert('Error', 'Failed to delete user: '+r.status+' '+t) }
+                await showAlert('Success', 'User deleted successfully');
+                const rer = await fetch('/api/admin/users', { headers: { Authorization: 'Bearer ' + token } });
+                if (rer.ok){ const j = await rer.json(); renderUserList(j.data, roleFilter); }
+              }catch(err){ console.error(err); await showAlert('Error', 'Network error while deleting user. Please try again.') }
+            });
+            tr.appendChild(btnTd);
+            btnTd.appendChild(verifyBtn);
+            btnTd.appendChild(delBtn);
+          }
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        out.appendChild(table);
+      }
+
+      function renderMachineList(list){
+        const out = document.getElementById('admin-list');
+        out.innerHTML = '';
+        if (!list || list.length === 0){ out.textContent = 'No machines found.'; return }
+        list.forEach(m => {
+          const d = document.createElement('div');
+          d.style.padding = '8px'; d.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+          const owner = m.ownerId || '—';
+          const price = (typeof m.price !== 'undefined' && m.price !== null && m.price !== '') ? ('$'+Number(m.price).toFixed(2)) : '—';
+          let adminStatusText = '';
+          let adminStatusColor = '';
+          if (m.status === 'approved') { adminStatusText = 'Available'; adminStatusColor = '#16a34a'; }
+          else if (m.status === 'booked') { adminStatusText = 'Not available'; adminStatusColor = '#ef4444'; }
+          else if (m.status === 'pending') { adminStatusText = 'Pending'; adminStatusColor = '#f59e0b'; }
+          else if (m.status === 'rejected') { adminStatusText = 'Rejected'; adminStatusColor = '#6b7280'; }
+          else { adminStatusText = m.status || ''; adminStatusColor = '#6b7280'; }
+          const adminStatusBadge = adminStatusText ? `<div style="font-size:0.8rem;padding:6px;border-radius:6px;background:${adminStatusColor};display:inline-block;color:#fff;margin-bottom:8px">${adminStatusText}</div>` : '';
+          d.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${m.name}</strong> ${adminStatusBadge} <div style="color:#94a3b8">${m.type} • ${m.model||''} • ${m.location||''}</div></div><div style="text-align:right">Owner: ${owner}<div style="margin-top:6px;color:#10b981">${price}</div></div></div>`;
+          // show bookings (if any)
+          if (m.bookings && m.bookings.length > 0){
+            const bwrap = document.createElement('div'); bwrap.style.marginTop = '8px';
+            m.bookings.forEach(b => {
+              const be = document.createElement('div');
+              be.style.display = 'flex';
+              be.style.justifyContent = 'space-between';
+              be.style.alignItems = 'center';
+              be.style.padding = '6px 0';
+              be.style.borderTop = '1px dashed rgba(255,255,255,0.03)';
+              const left = document.createElement('div');
+              // display booking details including customer-provided info
+              let info = `<div style="font-size:0.95rem"><strong>Booking</strong> ${b.startDate} → ${b.endDate}</div>`;
+              if(b.name) info += `<div style="font-size:0.85rem;color:#94a3b8">Name: ${b.name}</div>`;
+              if(b.email) info += `<div style="font-size:0.85rem;color:#94a3b8">Email: ${b.email}</div>`;
+              if(b.cnic) info += `<div style="font-size:0.85rem;color:#94a3b8">CNIC: ${b.cnic}</div>`;
+              if(b.phone) info += `<div style="font-size:0.85rem;color:#94a3b8">Phone: ${b.phone}</div>`;
+              if(b.address) info += `<div style="font-size:0.85rem;color:#94a3b8">Address: ${b.address}</div>`;
+              if(b.user && (b.user.email||b.user.name)) info += `<div style="font-size:0.85rem;color:#94a3b8">Recorded user: ${b.user.email||b.user.name}</div>`;
+              left.innerHTML = info;
+              const right = document.createElement('div');
+              const delB = document.createElement('button'); delB.textContent = 'Delete booking'; delB.style.marginLeft = '8px';
+              delB.addEventListener('click', async ()=>{
+                const ok = await showConfirm('Delete Booking', 'Delete this booking? This action cannot be undone.'); if (!ok) return;
+                const token = localStorage.getItem('token'); if (!token) return await showAlert('Error', 'Not authorized. Please log in again.');
+                try{
+                  const r = await fetch('/api/bookings/'+b.id, { method: 'DELETE', headers: { 'authorization': 'Bearer '+token } });
+                  if (!r.ok){ const t = await r.text().catch(()=>''); return await showAlert('Error', 'Failed to delete booking: '+r.status+' '+t) }
+                  await showAlert('Success', 'Booking deleted successfully');
+                  // refresh admin machines view
+                  const r2 = await fetch('/api/admin/machines', { headers: { Authorization: 'Bearer ' + token } });
+                  if (r2.ok){ const j = await r2.json(); renderMachineList(j.data); }
+                }catch(err){ console.error(err); await showAlert('Error', 'Network error while deleting booking. Please try again.') }
+              });
+              right.appendChild(delB);
+              be.appendChild(left);
+              be.appendChild(right);
+              bwrap.appendChild(be);
+            });
+            d.appendChild(bwrap);
+          }
+          out.appendChild(d);
+        });
+      }
+    }
+    document.getElementById('logout').addEventListener('click', () => { localStorage.removeItem('token'); location = '/login.html'; });
+    load();
+
+      // owner controls state
+      let currentUser = null;
+
+      // load machines with search/filter
+      let machinesList = [];
+      let currentPage = 1;
+      const PAGE_LIMIT = 6;
+      async function loadMachines(page = 1){
+        currentPage = page;
+        const q = encodeURIComponent(document.getElementById('search').value || '');
+        const token = localStorage.getItem('token');
+        const url = `/api/machines?q=${q}&page=${page}&limit=${PAGE_LIMIT}`;
+        const res = await fetch(url, { headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
+        const js = await res.json();
+        machinesList = js.data;
+        // if user info already loaded, reveal owner controls
+        if (currentUser) updateOwnerControls();
+        renderMachines(machinesList, js.total, js.page, js.limit);
+      }
+
+
+
+      function renderMachines(list, total=0, page=1, limit=6){
+        const container = document.getElementById('machines');
+        container.innerHTML = '';
+        list.forEach(m => {
+          const d = document.createElement('div');
+          d.className = 'card';
+          let statusText = '';
+          let statusColor = '';
+          if (m.status === 'approved') { statusText = 'Available'; statusColor = '#16a34a'; }
+          else if (m.status === 'booked') { statusText = 'Not available'; statusColor = '#ef4444'; }
+          else if (m.status === 'pending') { statusText = 'Pending'; statusColor = '#f59e0b'; }
+          else if (m.status === 'rejected') { statusText = 'Rejected'; statusColor = '#6b7280'; }
+          else { statusText = m.status || ''; statusColor = '#6b7280'; }
+          let statusBadge = '';
+          if (currentUser && statusText) {
+            statusBadge = `<div style="font-size:0.8rem;padding:6px;border-radius:6px;background:${statusColor};display:inline-block;color:#fff;margin-bottom:8px">${statusText}</div>`;
+          }
+          const priceText = (typeof m.price !== 'undefined' && m.price !== null && m.price !== '') ? ('₨ ' + Number(m.price).toFixed(2)) : '';
+          let priceHtml = '';
+          if (priceText && currentUser) {
+            priceHtml = `<div style="font-weight:700;color:#10b981;margin-top:6px">${priceText}</div>`;
+          }
+          d.innerHTML = `${statusBadge}<img src="${m.image}" alt="${m.name}" style="width:100%;border-radius:8px;margin-bottom:8px" /><h4>${m.name}</h4>${priceHtml}<p style="color:#6b7280">${m.description}</p><p style="color:#94a3b8;margin-top:6px;font-size:0.95rem">${m.type} • ${m.model||''} • ${m.location||''}</p>`;
+          // owner/admin controls
+          // booking button for customers only (not owner/admin)
+          if (currentUser && currentUser.role === 'Customer' && currentUser.id !== m.ownerId){
+            // only allow booking when machine is available/approved
+            const isAvailable = (m.status || 'approved') === 'approved';
+            if (isAvailable) {
+              const bookBtn = document.createElement('button'); bookBtn.textContent = 'Book'; bookBtn.style.marginTop='8px'; bookBtn.style.marginRight='6px';
+              // Open a dedicated booking form page instead of prompt dialogs
+              bookBtn.addEventListener('click', ()=>{
+                const params = new URLSearchParams({ machineId: m.id });
+                window.location = '/booking.html?' + params.toString();
+              });
+              d.appendChild(bookBtn);
+            } else {
+              // show a disabled button or note for not-available machines
+              const na = document.createElement('div'); na.textContent = 'Not available for booking'; na.style.marginTop='8px'; na.style.color='#ef4444'; d.appendChild(na);
+            }
+          }
+          if (currentUser && currentUser.id === m.ownerId){
+            const btns = document.createElement('div');
+            btns.style.marginTop = '8px';
+            const edit = document.createElement('button'); edit.textContent = 'Edit'; edit.style.marginRight='6px';
+            edit.addEventListener('click', ()=> editMachine(m));
+            const del = document.createElement('button'); del.textContent = 'Delete';
+            del.addEventListener('click', ()=> deleteMachine(m));
+            btns.appendChild(edit); btns.appendChild(del);
+            d.appendChild(btns);
+          }
+          // admin verify controls
+          if (currentUser && currentUser.role === 'Admin'){
+            const btns = document.createElement('div'); btns.style.marginTop='8px';
+            const approve = document.createElement('button'); approve.textContent = 'Approve';
+            approve.style.marginRight='6px';
+            approve.addEventListener('click', async ()=>{
+              const token = localStorage.getItem('token');
+              if (!token) return await showAlert('Error','Not authorized. Please log in as an Admin.');
+              try{
+                const res = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'approve' }) });
+                if (!res.ok){ const t = await res.text().catch(()=>''); return await showAlert('Error','Failed to approve: '+res.status+' '+t); }
+                await showAlert('Success','Machine approved');
+                await loadMachines(currentPage);
+              }catch(err){ console.error(err); await showAlert('Error','Network error while approving machine'); }
+            });
+            const reject = document.createElement('button'); reject.textContent = 'Reject';
+            reject.addEventListener('click', async ()=>{
+              const token = localStorage.getItem('token');
+              if (!token) return await showAlert('Error','Not authorized. Please log in as an Admin.');
+              try{
+                const res = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'reject' }) });
+                if (!res.ok){ const t = await res.text().catch(()=>''); return await showAlert('Error','Failed to reject: '+res.status+' '+t); }
+                await showAlert('Success','Machine rejected');
+                await loadMachines(currentPage);
+              }catch(err){ console.error(err); await showAlert('Error','Network error while rejecting machine'); }
+            });
+            btns.appendChild(approve); btns.appendChild(reject);
+            d.appendChild(btns);
+          }
+          container.appendChild(d);
+        });
+        // pagination controls
+        const pager = document.getElementById('pager');
+        if (!pager){
+          const p = document.createElement('div'); p.id='pager'; p.style.marginTop='12px'; container.parentNode.appendChild(p);
+        }
+        const totalPages = Math.max(1, Math.ceil((total||0)/limit));
+        document.getElementById('pager').innerHTML = `<div style="display:flex;gap:8px;align-items:center"><button id=\"prevPage\">Prev</button><span>Page ${page} / ${totalPages}</span><button id=\"nextPage\">Next</button></div>`;
+        document.getElementById('prevPage').onclick = ()=> { if (page>1) loadMachines(page-1) };
+        document.getElementById('nextPage').onclick = ()=> { if (page<totalPages) loadMachines(page+1) };
+      }
+
+      document.getElementById('searchBtn').addEventListener('click', () => loadMachines(1));
+      document.getElementById('search').addEventListener('keypress', (e) => { if (e.key === 'Enter') loadMachines(1); });
+
+      function updateOwnerControls(){
+        currentUser = window.currentUser || currentUser;
+        const ctrl = document.getElementById('ownerControls');
+        if (!currentUser) { ctrl.style.display='none'; return }
+        if (currentUser.role === 'Owner') ctrl.style.display='block';
+        else ctrl.style.display='none';
+      }
+
+      document.getElementById('showAdd').addEventListener('click', ()=>{
+        document.getElementById('addForm').style.display='block';
+      });
+      document.getElementById('addCancel').addEventListener('click', ()=>{
+        document.getElementById('addForm').style.display='none';
+      });
+      document.getElementById('addSubmit').addEventListener('click', async ()=>{
+        const form = document.getElementById('addForm');
+        const fd = new FormData();
+        const name = form.elements['name'].value;
+        const type = form.elements['type'].value;
+        const price = form.elements['price'] ? form.elements['price'].value : '';
+        const model = form.elements['model'].value;
+        const location = form.elements['location'].value;
+        const desc = form.elements['description'].value;
+        const url = form.elements['image'].value;
+        const file = form.elements['imageFile'].files[0];
+        if (!name || !type) return alert('Name and type required');
+        fd.append('name', name);
+        fd.append('type', type);
+        if (model) fd.append('model', model);
+        if (location) fd.append('location', location);
+        if (price) fd.append('price', price);
+        fd.append('description', desc);
+        if (file) fd.append('image', file);
+        else if (url) fd.append('image', url);
+        const token = localStorage.getItem('token');
+        if (!token) return alert('You must be logged in as an Owner to add machines');
+        const res = await fetch('/api/machines', { method: 'POST', headers: { 'authorization':'Bearer '+token }, body: fd });
+        if (!res.ok){
+          let text = '';
+          try { text = await res.text(); } catch(e) { text = String(e) }
+          console.error('Add machine failed', res.status, text);
+          return alert('Failed to add machine: ' + (text || res.statusText));
+        }
+        form.reset(); form.style.display='none';
+        await loadMachines();
+      });
+
+      function editMachine(m){
+        // navigate to dedicated edit page where owner can update details with a full form
+        if (!m || !m.id) return alert('Invalid machine');
+        window.location = '/edit-machine.html?machineId=' + encodeURIComponent(m.id);
+      }
+
+      async function deleteMachine(m){
+        const ok = await showConfirm('Delete Machine', 'Delete '+m.name+'? This action cannot be undone.'); if (!ok) return;
+        const token = localStorage.getItem('token');
+        if (!token) return alert('Not authorized');
+        const res = await fetch('/api/machines/'+m.id, { method:'DELETE', headers:{ authorization:'Bearer '+token } });
+        if (!res.ok) return alert('Failed to delete');
+        await loadMachines();
+      }
+
+      // ensure owner controls update after user loads
+      window.setCurrentUser = (u)=>{ window.currentUser = u; currentUser = u; updateOwnerControls(); };
+
+      loadMachines();
+  </script>
+</body>
+</html>

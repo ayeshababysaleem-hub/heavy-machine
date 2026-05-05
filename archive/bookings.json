@@ -1,0 +1,18 @@
+[
+  {
+    "id": "fde88551-6484-4d9f-976d-0ad4be208431",
+    "machineId": "c263ea85-eb7d-402c-9a24-fcd4c6349b7f",
+    "userId": "2eff2e5b-2771-46dc-8106-e9f776f6b7eb",
+    "startDate": "2026-04-08",
+    "endDate": "2026-04-09",
+    "durationDays": 2,
+    "location": "",
+    "name": "fa22-bcs-103",
+    "email": "fa22-bcs-103@cuivehari.edu.pk",
+    "cnic": "1234567890123",
+    "address": "Vehari",
+    "phone": "0303 4567321",
+    "status": "approved",
+    "createdAt": "2026-04-07T16:12:39.837Z"
+  }
+]

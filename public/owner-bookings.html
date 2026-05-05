@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Bookings</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/dashboard.html">Dashboard</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="padding:40px 20px;max-width:1200px;margin:0 auto">
+      <div class="card">
+        <h2 style="margin-top:0">My Bookings</h2>
+        <p>All bookings for your machines</p>
+        <div id="bookingsList" style="margin-top:16px">Loading...</div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+
+    <!-- Modal for alerts -->
+    <div id="alertModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+      <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+        <h3 id="alertTitle" style="margin:0 0 12px 0;color:#e6eef8">Message</h3>
+        <p id="alertMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Message</p>
+        <div style="display:flex;justify-content:flex-end">
+          <button id="alertOk" style="padding:10px 24px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function formatPKR(n){ return '₨ ' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function showAlert(title, message){
+      return new Promise((resolve)=>{
+        const modal = document.getElementById('alertModal');
+        const titleEl = document.getElementById('alertTitle');
+        const msgEl = document.getElementById('alertMessage');
+        const okBtn = document.getElementById('alertOk');
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        modal.style.display = 'flex';
+        const handle = ()=>{ modal.style.display='none'; okBtn.removeEventListener('click', handle); resolve(); };
+        okBtn.addEventListener('click', handle);
+      });
+    }
+    function showConfirm(title, message){
+      return new Promise((resolve)=>{
+        if (!document.getElementById('confirmModal')){
+          const wrapper = document.createElement('div');
+          wrapper.innerHTML = `
+          <div id="confirmModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+            <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+              <h3 id="confirmTitle" style="margin:0 0 12px 0;color:#e6eef8">Confirm</h3>
+              <p id="confirmMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Are you sure?</p>
+              <div style="display:flex;gap:12px;justify-content:flex-end">
+                <button id="confirmCancel" style="padding:10px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#e6eef8;cursor:pointer;font-weight:600">Cancel</button>
+                <button id="confirmOk" style="padding:10px 18px;border-radius:8px;border:0;background:linear-gradient(90deg,#ef4444,#dc2626);color:#fff;cursor:pointer;font-weight:600">Delete</button>
+              </div>
+            </div>
+          </div>
+          `;
+          document.body.appendChild(wrapper);
+        }
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmTitle');
+        const msgEl = document.getElementById('confirmMessage');
+        const okBtn = document.getElementById('confirmOk');
+        const cancelBtn = document.getElementById('confirmCancel');
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        modal.style.display = 'flex';
+        const handleOk = ()=>{ modal.style.display='none'; okBtn.removeEventListener('click', handleOk); cancelBtn.removeEventListener('click', handleCancel); resolve(true); };
+        const handleCancel = ()=>{ modal.style.display='none'; okBtn.removeEventListener('click', handleOk); cancelBtn.removeEventListener('click', handleCancel); resolve(false); };
+        okBtn.addEventListener('click', handleOk);
+        cancelBtn.addEventListener('click', handleCancel);
+      });
+    }
+
+    (async function(){
+      const token = localStorage.getItem('token');
+      if (!token) return await showAlert('Error', 'Not logged in');
+      const list = document.getElementById('bookingsList');
+      try{
+        // fetch all bookings
+        const r = await fetch('/api/bookings', { headers: { Authorization: 'Bearer ' + token } });
+        if (!r.ok){ return list.innerHTML = '<p>Failed to load bookings</p>'; }
+        const data = await r.json();
+        const bookings = data.data || [];
+
+        // fetch all machines to map owner
+        const mr = await fetch('/api/machines', { headers: { Authorization: 'Bearer ' + token } });
+        let ownerMachineIds = [];
+        if (mr.ok){
+          const mdata = await mr.json();
+          const machines = mdata.data || [];
+          // decode JWT to get current user ID
+          const parts = token.split('.');
+          let userId = null;
+          if (parts.length >= 2){
+            try{ userId = JSON.parse(atob(parts[1])).id; }catch(e){}
+          }
+          ownerMachineIds = machines.filter(m => m.ownerId === userId).map(m => m.id);
+        }
+
+        // filter bookings to show only those for owner's machines
+        const ownerBookings = bookings.filter(b => ownerMachineIds.includes(b.machineId));
+        if (ownerBookings.length === 0){ list.innerHTML = '<p>No bookings for your machines</p>'; return; }
+
+        // render bookings as a table
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginTop = '12px';
+        const thead = document.createElement('thead');
+        thead.innerHTML = '<tr style="border-bottom:1px solid rgba(255,255,255,0.1)"><th style="text-align:left;padding:12px">Machine ID</th><th style="text-align:left;padding:12px">Customer</th><th style="text-align:left;padding:12px">Start Date</th><th style="text-align:left;padding:12px">End Date</th><th style="text-align:left;padding:12px">Duration</th><th style="text-align:left;padding:12px">Phone</th><th style="text-align:left;padding:12px">Status</th><th style="text-align:left;padding:12px">Actions</th></tr>';
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        ownerBookings.forEach(b => {
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+          tr.innerHTML = `
+            <td style="padding:12px"><code style="background:rgba(255,255,255,0.05);padding:4px 8px;border-radius:4px;font-size:0.85rem">${b.machineId.slice(0,8)}...</code></td>
+            <td style="padding:12px">${b.name || '—'}</td>
+            <td style="padding:12px">${b.startDate}</td>
+            <td style="padding:12px">${b.endDate}</td>
+            <td style="padding:12px">${b.durationDays} day(s)</td>
+            <td style="padding:12px">${b.phone || '—'}</td>
+            <td style="padding:12px"><span style="padding:4px 8px;border-radius:4px;font-size:0.85rem;font-weight:600;text-transform:capitalize;background:${b.status === 'approved' ? 'rgba(34,197,94,0.2)' : 'rgba(251,191,36,0.2)'};color:${b.status === 'approved' ? '#22c55e' : '#fbbf24'}">${b.status || 'pending'}</span></td>
+          `;
+          const actionsTd = document.createElement('td');
+          actionsTd.style.padding = '12px';
+          actionsTd.style.display = 'flex';
+          actionsTd.style.gap = '8px';
+          
+          const approveBtn = document.createElement('button');
+          approveBtn.textContent = 'Approve';
+          approveBtn.style.background = 'linear-gradient(90deg,#10b981,#059669)';
+          approveBtn.style.color = '#fff';
+          approveBtn.style.padding = '8px 12px';
+          approveBtn.style.borderRadius = '6px';
+          approveBtn.style.border = '0';
+          approveBtn.style.cursor = 'pointer';
+          approveBtn.style.fontSize = '0.9rem';
+          approveBtn.style.fontWeight = '600';
+          if (b.status === 'approved') {
+            approveBtn.disabled = true;
+            approveBtn.style.opacity = '0.5';
+            approveBtn.style.cursor = 'not-allowed';
+          }
+          
+          approveBtn.addEventListener('click', async ()=>{
+            if (b.status === 'approved') return;
+            const token = localStorage.getItem('token');
+            if (!token) return await showAlert('Error', 'Not authorized');
+            try{
+              const r = await fetch('/api/bookings/' + b.id + '/approve', { method: 'PATCH', headers: { 'authorization': 'Bearer ' + token } });
+              if (!r.ok){ const t = await r.text().catch(()=>''); return await showAlert('Error', 'Failed to approve: ' + r.status + ' ' + t); }
+              await showAlert('Success', 'Booking approved successfully. Customer has been notified via email.');
+              location.reload();
+            }catch(err){ console.error(err); await showAlert('Error', 'Network error while approving booking'); }
+          });
+          
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'Delete';
+          delBtn.style.background = 'linear-gradient(90deg,#ef4444,#dc2626)';
+          delBtn.style.color = '#fff';
+          delBtn.style.padding = '8px 12px';
+          delBtn.style.borderRadius = '6px';
+          delBtn.style.border = '0';
+          delBtn.style.cursor = 'pointer';
+          delBtn.style.fontSize = '0.9rem';
+          delBtn.style.fontWeight = '600';
+          
+          delBtn.addEventListener('click', async ()=>{
+            const ok = await showConfirm('Delete Booking', 'Delete this booking? This action cannot be undone.');
+            if (!ok) return;
+            const token = localStorage.getItem('token');
+            if (!token) return await showAlert('Error', 'Not authorized');
+            try{
+              const r = await fetch('/api/bookings/' + b.id, { method: 'DELETE', headers: { 'authorization': 'Bearer ' + token } });
+              if (!r.ok){ const t = await r.text().catch(()=>''); return await showAlert('Error', 'Failed to delete: ' + r.status + ' ' + t); }
+              await showAlert('Success', 'Booking deleted successfully');
+              location.reload();
+            }catch(err){ console.error(err); await showAlert('Error', 'Network error while deleting booking'); }
+          });
+          
+          actionsTd.appendChild(approveBtn);
+          actionsTd.appendChild(delBtn);
+          tr.appendChild(actionsTd);
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        list.appendChild(table);
+      }catch(err){ console.error(err); list.innerHTML = '<p>Error loading bookings</p>'; }
+    })();
+  </script>
+</body>
+</html>

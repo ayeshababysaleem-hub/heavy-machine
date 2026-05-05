@@ -1,0 +1,26 @@
+{
+  "name": "auth-demo",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "migrate": "npx knex migrate:latest --knexfile knexfile.js",
+    "migrate:make": "npx knex migrate:make",
+    "import:users": "node scripts/migrate-users-to-mysql.js",
+    "import:machines": "node scripts/migrate-machines-to-mysql.js",
+    "import:bookings": "node scripts/migrate-bookings-to-mysql.js",
+    "import:contacts": "node scripts/migrate-contacts-to-mysql.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "knex": "^2.5.1",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.22.3",
+    "nodemailer": "^8.0.7",
+    "uuid": "^14.0.0"
+  }
+}

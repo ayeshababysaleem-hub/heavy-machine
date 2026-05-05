@@ -1,0 +1,240 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Payment</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/dashboard.html">Dashboard</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="padding:40px 20px;max-width:1000px;margin:0 auto">
+      <div class="page-payment" style="display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:start">
+        <section id="details" class="card" style="padding:24px;">
+          <h2 style="margin-top:0">Payment Details</h2>
+          <div id="summary">Loading booking...</div>
+        </section>
+
+        <aside class="card" style="padding:20px;">
+          <h3 style="margin-top:0;margin-bottom:12px">Payment</h3>
+          <div id="cardContainer" style="margin-bottom:12px">
+            <label style="display:block;margin-bottom:8px;color:var(--muted)">Card details</label>
+            <div id="card-element" style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px"></div>
+            <div id="card-errors" role="alert" style="color:#ffb4b4;margin-top:8px"></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center">
+            <button id="payBtn" style="background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;padding:12px 20px;border-radius:10px;border:0;cursor:pointer">Pay</button>
+            <button id="cancelBtn" style="padding:12px 20px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:#e6eef8;cursor:pointer">Cancel</button>
+          </div>
+          <div id="result" style="margin-top:12px"></div>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+  </div>
+
+  <script>
+    function createModals(){
+      if (document.getElementById('alertModal')) return;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `
+      <div id="alertModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+        <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+          <h3 id="alertTitle" style="margin:0 0 12px 0;color:#e6eef8">Message</h3>
+          <p id="alertMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Operation complete.</p>
+          <div style="display:flex;justify-content:flex-end">
+            <button id="alertOk" style="padding:10px 24px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">OK</button>
+          </div>
+        </div>
+      </div>
+      `;
+      document.body.appendChild(wrapper);
+    }
+    function showAlert(title, message){
+      return new Promise((resolve)=>{
+        createModals();
+        const modal = document.getElementById('alertModal');
+        const titleEl = document.getElementById('alertTitle');
+        const msgEl = document.getElementById('alertMessage');
+        const okBtn = document.getElementById('alertOk');
+        titleEl.textContent = title; msgEl.textContent = message; modal.style.display = 'flex';
+        const handle = ()=>{ modal.style.display='none'; okBtn.removeEventListener('click', handle); resolve(); };
+        okBtn.addEventListener('click', handle);
+      });
+    }
+
+    (async function(){
+      const raw = sessionStorage.getItem('pendingBooking');
+      if (!raw) return location = '/booking.html';
+      let booking;
+      try{ booking = JSON.parse(raw); }catch(e){ return location = '/booking.html'; }
+      const summaryEl = document.getElementById('summary');
+      summaryEl.innerHTML = '<p>Preparing payment summary...</p>';
+      const payBtn = document.getElementById('payBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+      // start with Pay disabled until we know flow; Cancel must always work
+      if (payBtn) { payBtn.disabled = true; payBtn.style.display = ''; }
+      if (cancelBtn) cancelBtn.addEventListener('click', ()=>{ sessionStorage.removeItem('pendingBooking'); location = '/booking.html'; });
+
+      // fetch machine details to compute price (allow using embedded booking info)
+      try{
+        let m = null;
+        if (!booking.machineId && (booking.machineName || booking.machinePrice !== undefined)){
+          m = { name: booking.machineName || '', model: booking.machineModel || '', price: booking.machinePrice };
+        } else {
+          const r = await fetch('/api/machines/'+encodeURIComponent(booking.machineId));
+          if (!r.ok) {
+            const detail = await r.text().catch(()=>'(no details)');
+            summaryEl.innerHTML = '<p>Unable to fetch machine details</p>' +
+              `<pre style="color:#94a3b8;font-size:12px;white-space:pre-wrap;margin-top:8px">Status: ${r.status}\n${detail}</pre>` +
+              '<p style="margin-top:8px"><a id="retryFetch" href="#">Retry</a> or <a id="backToBooking" href="#">Back</a></p>';
+            const cardC = document.getElementById('cardContainer'); if (cardC) cardC.style.display = 'none';
+            if (payBtn) { payBtn.disabled = true; payBtn.style.display = 'none'; }
+            const retry = document.getElementById('retryFetch'); if (retry) retry.addEventListener('click', (ev)=>{ ev.preventDefault(); location.reload(); });
+            const back = document.getElementById('backToBooking'); if (back) back.addEventListener('click', (ev)=>{ ev.preventDefault(); sessionStorage.removeItem('pendingBooking'); location = '/booking.html'; });
+            return;
+          }
+          m = await r.json();
+        }
+        const price = Number(m.price) || 0;
+        const days = Number(booking.durationDays) || 1;
+        const total = price * days;
+        function formatPKR(n){ return '₨ ' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        summaryEl.innerHTML = `
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            ${m.image ? `<img src="${m.image}" alt="${(m.name||'')+ ' image'}" style="width:84px;height:60px;object-fit:cover;border-radius:6px"/>` : ''}
+            <div>
+              <p style="margin:0 0 8px 0"><strong style="display:block">${m.name || booking.machineId}</strong></p>
+              <p style="margin:0;color:var(--muted)"><strong>Start:</strong> ${booking.startDate}</p>
+              <p style="margin:0;color:var(--muted)"><strong>Duration (days):</strong> ${days}</p>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <p style="margin:4px 0"><strong>Per day:</strong> ${formatPKR(price)}</p>
+            <p style="margin:4px 0"><strong>Total:</strong> ${formatPKR(total)}</p>
+          </div>
+        `;
+
+        // require login to proceed with payment/booking
+        const token = localStorage.getItem('token');
+        if (!token) {
+          summaryEl.innerHTML += '<p style="margin-top:10px;color:#ffb4b4">Please <a href="/login.html">login</a> as a Customer to continue.</p>';
+          const cardC = document.getElementById('cardContainer'); if (cardC) cardC.style.display = 'none';
+          if (payBtn) { payBtn.disabled = true; payBtn.style.display = 'none'; }
+          return;
+        }
+        // decode JWT client-side to ensure role is Customer before allowing payment
+        let userRole = null;
+        try{
+          const parts = token.split('.');
+          if (parts.length >= 2){ const payload = JSON.parse(atob(parts[1])); userRole = payload && (payload.role || payload.roles || payload['role'] || payload['roles']); }
+        }catch(e){ console.warn('Failed to decode token payload', e); }
+        if (userRole !== 'Customer'){
+          const cardC = document.getElementById('cardContainer'); if (cardC) cardC.style.display = 'none';
+          if (payBtn) { payBtn.disabled = true; payBtn.style.display = 'none'; }
+          summaryEl.innerHTML += '<p style="margin-top:10px;color:#ffb4b4">You must be logged in as a <strong>Customer</strong> to make payments. Please <a href="/login.html">login</a> with a Customer account.</p>';
+          return;
+        }
+
+        // load stripe config
+        // fetch stripe config, but don't fail the whole flow if Stripe not available
+        let cfg = null;
+        try{
+          const rcfg = await fetch('/api/stripe-config');
+          if (rcfg.ok) cfg = await rcfg.json();
+        }catch(e){ console.warn('stripe-config fetch failed', e); }
+        const publishable = cfg && cfg.publishableKey;
+        const stripeEnabled = cfg && cfg.enabled && publishable;
+
+        // payBtn and cancelBtn already defined above
+
+        if (!stripeEnabled){
+          // fallback: keep previous behavior (direct booking)
+          const cardC = document.getElementById('cardContainer'); if (cardC) cardC.style.display = 'none';
+          // enable pay button for fallback flow
+          if (payBtn) payBtn.disabled = false;
+          payBtn.addEventListener('click', async ()=>{
+            payBtn.disabled = true; payBtn.textContent = 'Processing...';
+            try{
+              const token = localStorage.getItem('token');
+              const headers = { 'content-type': 'application/json' };
+              if (token) headers['authorization'] = 'Bearer ' + token;
+              const res = await fetch('/api/bookings', { method: 'POST', headers, body: JSON.stringify(booking) });
+              if (!res.ok){ const t = await res.text().catch(()=>''); await showAlert('Payment Failed','Failed to create booking: '+res.status+' '+t); payBtn.disabled = false; payBtn.textContent = 'Pay'; return }
+              const j = await res.json();
+              // save last booking + pending booking for receipt display
+              try{ sessionStorage.setItem('lastBooking', JSON.stringify(j.booking)); }catch(e){}
+              try{ sessionStorage.setItem('lastPendingBooking', JSON.stringify(booking)); }catch(e){}
+              sessionStorage.removeItem('pendingBooking');
+              await showAlert('Payment Successful','Booking created — ID: '+(j.booking && j.booking.id ? j.booking.id : 'OK'));
+              location = '/payment-receipt.html';
+            }catch(err){ console.error(err); await showAlert('Error','Network error during booking'); payBtn.disabled = false; payBtn.textContent = 'Pay'; }
+          });
+        } else {
+          // initialize Stripe Elements
+          const stripeClient = Stripe(publishable);
+          const elements = stripeClient.elements();
+          const style = { base: { color: '#e6eef8', fontSize: '16px', '::placeholder': { color: '#94a3b8' } } };
+          const card = elements.create('card', { style });
+          const cardC = document.getElementById('cardContainer'); if (cardC) cardC.style.display = '';
+          card.mount('#card-element');
+          card.on('change', (e)=>{ const el = document.getElementById('card-errors'); el.textContent = e.error ? e.error.message : ''; });
+          // enable pay button once card is ready
+          if (payBtn) payBtn.disabled = false;
+
+          payBtn.addEventListener('click', async ()=>{
+            payBtn.disabled = true; payBtn.textContent = 'Processing...';
+            try{
+              // request payment intent from server
+              const token = localStorage.getItem('token');
+              const headers = { 'content-type': 'application/json' };
+              if (token) headers['authorization'] = 'Bearer ' + token;
+              const r = await fetch('/api/create-payment-intent', { method: 'POST', headers, body: JSON.stringify({ machineId: booking.machineId, startDate: booking.startDate, durationDays: booking.durationDays, name: booking.name, email: booking.email }) });
+              if (!r.ok){ const t = await r.text().catch(()=>''); await showAlert('Error','Failed to create payment intent: '+r.status+' '+t); payBtn.disabled = false; payBtn.textContent = 'Pay'; return }
+              const js = await r.json();
+              const clientSecret = js.clientSecret;
+              const piId = js.paymentIntentId;
+              const result = await stripeClient.confirmCardPayment(clientSecret, { payment_method: { card, billing_details: { name: booking.name, email: booking.email } } });
+              if (result.error) { await showAlert('Payment Failed', result.error.message || 'Payment failed'); payBtn.disabled = false; payBtn.textContent = 'Pay'; return }
+              if (result.paymentIntent && result.paymentIntent.status === 'succeeded'){
+                // finalize booking on server with paymentIntentId
+                const r2 = await fetch('/api/bookings', { method: 'POST', headers, body: JSON.stringify(Object.assign({}, booking, { paymentIntentId: piId })) });
+                if (!r2.ok){ const t = await r2.text().catch(()=>''); await showAlert('Error','Booking creation failed: '+r2.status+' '+t); payBtn.disabled = false; payBtn.textContent = 'Pay'; return }
+                const j = await r2.json();
+                // save last booking + pending booking for receipt display
+                try{ sessionStorage.setItem('lastBooking', JSON.stringify(j.booking)); }catch(e){}
+                try{ sessionStorage.setItem('lastPendingBooking', JSON.stringify(booking)); }catch(e){}
+                sessionStorage.removeItem('pendingBooking');
+                await showAlert('Payment Successful','Booking created — ID: '+(j.booking && j.booking.id ? j.booking.id : 'OK'));
+                location = '/payment-receipt.html';
+              } else {
+                await showAlert('Payment Failed','Payment did not complete'); payBtn.disabled = false; payBtn.textContent = 'Pay';
+              }
+            }catch(err){ console.error(err); await showAlert('Error','Network error during payment'); payBtn.disabled = false; payBtn.textContent = 'Pay'; }
+          });
+        }
+
+        cancelBtn.addEventListener('click', ()=>{
+          sessionStorage.removeItem('pendingBooking');
+          location = '/booking.html';
+        });
+
+      }catch(err){ console.error('Error preparing payment', err); summaryEl.textContent = 'Error preparing payment: '+(err && err.message ? err.message : String(err)); }
+    })();
+  </script>
+</body>
+</html>

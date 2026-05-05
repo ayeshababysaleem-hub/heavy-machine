@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Contact Us</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/register.html">Register</a>
+          <a href="/login.html">Login</a>
+          <a href="/dashboard.html">Machinery</a>
+          <a href="/contact.html">Contact</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="padding:40px 20px;max-width:720px;margin:0 auto">
+      <div class="card">
+        <h2>Contact Us</h2>
+        <p>If you have questions or need support, send us a message and we'll respond as soon as possible.</p>
+        <form id="contactForm">
+          <input name="name" placeholder="Your name" required style="display:block;width:100%;padding:10px;margin-top:8px" />
+          <input name="email" type="email" placeholder="Your email" required style="display:block;width:100%;padding:10px;margin-top:8px" />
+          <input name="phone" type="tel" placeholder="Your phone number" required style="display:block;width:100%;padding:10px;margin-top:8px" />
+          <textarea name="message" placeholder="Message" required style="display:block;width:100%;padding:10px;margin-top:8px;min-height:120px"></textarea>
+          <div style="margin-top:12px"><button type="submit">Send message</button></div>
+        </form>
+        <div id="result" style="margin-top:12px"></div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.target;
+      const name = f.name.value.trim();
+      const email = f.email.value.trim();
+      const phone = f.phone.value.trim();
+      const message = f.message.value.trim();
+      const resEl = document.getElementById('result');
+
+      // Validate name: only letters, spaces, apostrophes or hyphens. Minimum 2 characters.
+      const nameRe = /^[A-Za-z][A-Za-z\s'\-]{1,49}$/;
+      if (!nameRe.test(name)) {
+        resEl.textContent = 'Please enter a valid name (letters only, e.g. Ali, Ayesha).';
+        return;
+      }
+
+      // Validate phone for Pakistan numbers:
+      // Accepts: local 11-digit starting with 03 (e.g. 03001234567),
+      // international 12-digit starting with 92 (e.g. +923001234567 -> digits 923001234567),
+      // or 10-digit mobile starting with 3 (e.g. 3001234567).
+      const digits = phone.replace(/\D/g, '');
+      const validPak = (digits.length === 11 && digits.startsWith('03')) ||
+                       (digits.length === 12 && digits.startsWith('92') && digits[2] === '3') ||
+                       (digits.length === 10 && digits.startsWith('3'));
+      if (!validPak) {
+        resEl.textContent = 'Please enter a valid Pakistan phone number (e.g. 03001234567 or +923001234567).';
+        f.phone.focus();
+        return;
+      }
+
+      resEl.textContent = 'Sending...';
+      try{
+        const body = { name, email, phone, message };
+        const r = await fetch('/api/contact', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+        if (!r.ok){ const t = await r.text().catch(()=>''); resEl.textContent = 'Failed to send: '+r.status+' '+t; return }
+        resEl.textContent = 'Message sent — thank you!';
+        f.reset();
+      }catch(err){ console.error(err); resEl.textContent = 'Network error'; }
+    });
+  </script>
+</body>
+</html>

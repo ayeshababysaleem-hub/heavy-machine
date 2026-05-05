@@ -1,0 +1,47 @@
+[
+  {
+    "id": "5a55f167-49dc-434f-a7f3-1622da411423",
+    "name": "Ayesha Saleem",
+    "email": "ayeshasaleemvhr13@gmail.com",
+    "password": "$2a$10$HeQSgzzzAbH1Yy6kPDGlguiaMiPYjh3XMgQ/zN71C1JaEul1GGNwa",
+    "role": "Admin",
+    "verified": true,
+    "verificationToken": null
+  },
+  {
+    "id": "dda5af3a-8149-4168-9e17-cb193f2fe6bb",
+    "name": "kishwer alyas ",
+    "email": "kishweralyasalyas@gmail.com",
+    "password": "$2a$10$O.Q7DGS0HzP6L1hggjw9aeb9m62O7Qw57DDzSb/U6aHUc6BVcoPji",
+    "role": "Customer",
+    "verified": true,
+    "verificationToken": null
+  },
+  {
+    "id": "2eff2e5b-2771-46dc-8106-e9f776f6b7eb",
+    "name": "fa22-bcs-103",
+    "email": "fa22-bcs-103@cuivehari.edu.pk",
+    "password": "$2a$10$5YNWSaI3sxFQlrFHZVRw5OJqX4vWb1gEH7pW4v8cHjysamWNWxHGW",
+    "role": "Customer",
+    "verified": true,
+    "verificationToken": "6d5aefb5-847f-4969-8975-602dc44a2886"
+  },
+  {
+    "id": "bad033f2-18e2-451e-8b74-8f76b9690601",
+    "name": "Parveen Akhtar",
+    "email": "parveenakhtarvhr361@gmail.com",
+    "password": "$2a$10$6TWMjZ3jpQhf7/HHQ.Pr5eWmLdH50xQyXR7D/oVNlYQgqb/4538f.",
+    "role": "Owner",
+    "verified": true,
+    "verificationToken": "7c773c27-08c3-4272-9ff4-42512d7f5a34"
+  },
+  {
+    "id": "984dc1dc-1b1f-48fc-bb71-2e0087576f08",
+    "name": "ali",
+    "email": "ali@gmail.com",
+    "password": "$2a$10$RfBOSR0eCy.ZhRtDNK9ARe5ac1DqvHc42wX5GcOneke7FglT/RqAK",
+    "role": "Admin",
+    "verified": false,
+    "verificationToken": "2e943ec3-71f4-4dbf-88c0-44ae0c298514"
+  }
+]

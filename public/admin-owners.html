@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin - Owners</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>#navLogin{display:none !important}</style>
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/dashboard.html">Dashboard</a>
+          <a href="/login.html" id="navLogin">Login</a>
+          <a href="#" id="navLogout" style="display:none;">Logout</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="padding-top:40px;">
+      <h2>Owners</h2>
+      <div id="usersList">Loading...</div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+  </div>
+
+  <script>
+    // reuse modal helpers from admin-users
+    function showAlert(title, message) {
+      return new Promise((resolve) => {
+        if (!document.getElementById('alertModal')) createModals();
+        const modal = document.getElementById('alertModal');
+        const titleEl = document.getElementById('alertTitle');
+        const msgEl = document.getElementById('alertMessage');
+        const okBtn = document.getElementById('alertOk');
+        titleEl.textContent = title; msgEl.textContent = message; modal.style.display = 'flex';
+        const handleOk = () => { cleanup(); resolve(); };
+        const cleanup = () => { modal.style.display = 'none'; okBtn.removeEventListener('click', handleOk); document.removeEventListener('keydown', handleEscape); };
+        const handleEscape = (e) => { if (e.key === 'Escape') handleOk(); };
+        okBtn.addEventListener('click', handleOk); document.addEventListener('keydown', handleEscape);
+      });
+    }
+    function showConfirm(title, message) {
+      return new Promise((resolve) => {
+        if (!document.getElementById('confirmModal')) createModals();
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmTitle');
+        const msgEl = document.getElementById('confirmMessage');
+        const okBtn = document.getElementById('confirmOk');
+        const cancelBtn = document.getElementById('confirmCancel');
+        titleEl.textContent = title; msgEl.textContent = message; modal.style.display = 'flex';
+        const handleOk = () => { cleanup(); resolve(true); };
+        const handleCancel = () => { cleanup(); resolve(false); };
+        const cleanup = () => { modal.style.display = 'none'; okBtn.removeEventListener('click', handleOk); cancelBtn.removeEventListener('click', handleCancel); document.removeEventListener('keydown', handleEscape); };
+        const handleEscape = (e) => { if (e.key === 'Escape') handleCancel(); };
+        okBtn.addEventListener('click', handleOk); cancelBtn.addEventListener('click', handleCancel); document.addEventListener('keydown', handleEscape);
+      });
+    }
+    function createModals(){
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `
+      <div id="confirmModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+        <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+          <h3 id="confirmTitle" style="margin:0 0 12px 0;color:#e6eef8">Confirm Action</h3>
+          <p id="confirmMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Are you sure?</p>
+          <div style="display:flex;gap:12px;justify-content:flex-end">
+            <button id="confirmCancel" style="padding:10px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#e6eef8;cursor:pointer;font-weight:600;transition:all 0.2s">Cancel</button>
+            <button id="confirmOk" style="padding:10px 18px;border-radius:8px;border:0;background:linear-gradient(90deg,#ef4444,#dc2626);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">Delete</button>
+          </div>
+        </div>
+      </div>
+      <div id="alertModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+        <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+          <h3 id="alertTitle" style="margin:0 0 12px 0;color:#e6eef8">Message</h3>
+          <p id="alertMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Operation complete.</p>
+          <div style="display:flex;justify-content:flex-end">
+            <button id="alertOk" style="padding:10px 24px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">OK</button>
+          </div>
+        </div>
+      </div>
+      `;
+      document.body.appendChild(wrapper);
+    }
+
+    async function loadOwners(){
+      const token = localStorage.getItem('token'); if (!token) return (location = '/login.html');
+      try{
+        const res = await fetch('/api/admin/users', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) return await showAlert('Error','Failed to load owners: '+res.status);
+        const j = await res.json(); renderUserList(j.data || [], 'Owner');
+      }catch(err){ console.error(err); await showAlert('Error','Network error while loading owners') }
+    }
+
+    function renderUserList(list, roleFilter){
+      const out = document.getElementById('usersList'); out.innerHTML = '';
+      const filtered = roleFilter ? list.filter(u=>u.role===roleFilter) : list;
+      if (filtered.length===0) { out.textContent='No owners found.'; return }
+      const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse';
+      const thead = document.createElement('thead'); thead.innerHTML = '<tr><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Email</th><th style="text-align:left;padding:8px">Role</th><th style="text-align:left;padding:8px">Verified</th><th style="text-align:left;padding:8px">Actions</th></tr>';
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      filtered.forEach(u=>{
+        const tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+        const verifiedText = u.verified ? 'Yes':'No';
+        tr.innerHTML = `<td style="padding:8px">${u.name||'-'}</td><td style="padding:8px">${u.email}</td><td style="padding:8px">${u.role}</td><td style="padding:8px">${verifiedText}</td>`;
+        const actionsTd = document.createElement('td'); actionsTd.style.padding='8px';
+        if (!u.verified){ const verifyBtn = document.createElement('button'); verifyBtn.textContent='Verify'; verifyBtn.style.marginRight='8px'; verifyBtn.addEventListener('click', async ()=>{
+          const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
+          try{ const r = await fetch('/api/admin/users/'+u.id+'/verify',{ method:'POST', headers:{ 'authorization':'Bearer '+token, 'content-type':'application/json' }, body: JSON.stringify({}) }); if (!r.ok){ const t=await r.text().catch(()=>''); return await showAlert('Error','Failed to verify: '+r.status+' '+t) } await showAlert('Success','User verified'); loadOwners(); }catch(err){ console.error(err); await showAlert('Error','Network error while verifying user') }
+        }); actionsTd.appendChild(verifyBtn); }
+        const delBtn = document.createElement('button'); delBtn.textContent='Delete'; delBtn.addEventListener('click', async ()=>{
+          const ok = await showConfirm('Delete Owner','Delete '+(u.email||u.name)+'? This cannot be undone.'); if (!ok) return; const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
+          try{ const r = await fetch('/api/admin/users/'+u.id, { method:'DELETE', headers:{ 'authorization':'Bearer '+token } }); if (!r.ok){ const t=await r.text().catch(()=>''); return await showAlert('Error','Failed to delete: '+r.status+' '+t) } await showAlert('Success','User deleted'); loadOwners(); }catch(err){ console.error(err); await showAlert('Error','Network error while deleting user') }
+        }); actionsTd.appendChild(delBtn);
+        tr.appendChild(actionsTd); tbody.appendChild(tr);
+      });
+      table.appendChild(tbody); out.appendChild(table);
+    }
+
+    // show logout link
+    const tkn = localStorage.getItem('token'); if (tkn) document.getElementById('navLogout').style.display='inline-block';
+    document.getElementById('navLogout').addEventListener('click', ()=>{ localStorage.removeItem('token'); location='/login.html' });
+
+    loadOwners();
+  </script>
+</body>
+</html>

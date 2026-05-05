@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Register</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/login.html">Login</a>
+          <a href="/contact.html">Contact</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="display:flex;justify-content:center;align-items:flex-start;padding-top:40px;">
+      <div class="card">
+        <h2>Register</h2>
+        <form id="register">
+          <label>Name<input name="name" /></label>
+          <label>Email<input name="email" type="email" required /></label>
+          <label>Password<input name="password" type="password" required /></label>
+          <label>Role
+            <select name="role">
+              <option>Customer</option>
+              <option>Owner</option>
+              <option>Admin</option>
+            </select>
+          </label>
+          <button id="registerBtn" type="submit">Register</button>
+        </form>
+        <div id="msg"></div>
+        <p style="margin-top:12px">Already have an account? <a href="/login.html">Login</a></p>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+  </div>
+  <script>
+    document.getElementById('register').addEventListener('submit', async e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = Object.fromEntries(fd.entries());
+      const msg = document.getElementById('msg');
+      const btn = document.getElementById('registerBtn');
+      btn.disabled = true;
+      // basic client-side validation
+      if (!data.name || !data.email || !data.password || !data.role) { msg.textContent = 'Please fill required fields.'; btn.disabled = false; return; }
+      // name must include letters and not be only numbers
+      if (data.name.trim().length < 2 || /^\d+$/.test(data.name.trim()) || !/[A-Za-z]/.test(data.name)) { msg.textContent = 'Please enter a valid name (letters required).'; btn.disabled = false; return; }
+      if (data.password.length < 6) { msg.textContent = 'Password must be at least 6 characters.'; btn.disabled = false; return; }
+      
+      // Check if email is already registered and verified
+      try {
+        const checkRes = await fetch('/api/check-email', { 
+          method: 'POST', 
+          headers: { 'content-type': 'application/json' }, 
+          body: JSON.stringify({ email: data.email }) 
+        });
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          if (checkData.exists && checkData.verified) {
+            msg.textContent = 'This email is already registered and verified. Please login instead.';
+            btn.disabled = false;
+            return;
+          }
+          if (checkData.exists && !checkData.verified) {
+            msg.textContent = 'This email is registered but not verified. Please check your email for verification link.';
+            btn.disabled = false;
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Email check failed:', err);
+        // Continue with registration if check fails
+      }
+      
+      try{
+        msg.textContent = 'Registering...';
+        const res = await fetch('/api/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) });
+        let json = null;
+        try{ json = await res.json() }catch(e){ /* non-json response */ }
+        if (!res.ok) {
+          msg.textContent = (json && json.error) ? json.error : ('Request failed: ' + res.status + ' ' + res.statusText);
+          btn.disabled = false;
+          return;
+        }
+        // Do not automatically open the verification email page.
+        // Redirect user to the login page and show a notice there.
+        location = '/login.html?registered=1';
+      }catch(err){
+        msg.textContent = 'Network error: ' + (err.message||err);
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

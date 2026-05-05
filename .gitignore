@@ -6,3 +6,5 @@ coverage/
 logs/
 *.log
 serviceAccountKey.*
+key.json
+service-account-key.json

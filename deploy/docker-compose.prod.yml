@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  api:
+    image: ghcr.io/<owner>/<repo>/heavy-machine:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+    secrets:
+      - prod_db_credentials
+
+secrets:
+  prod_db_credentials:
+    external: true
+
+# Note: set environment variables from your secret manager or .env file in the host environment
+# Example: export DB_HOST=...; export DB_USER=...; docker stack deploy --compose-file docker-compose.prod.yml heavy-machine

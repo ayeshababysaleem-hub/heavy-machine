@@ -526,6 +526,11 @@ app.post('/api/bookings', authMiddleware, async (req, res) => {
   // parse dates
   const s = new Date(startDate);
   if (Number.isNaN(s.getTime())) return res.status(400).json({ error: 'Invalid startDate' });
+  // server-side: disallow past start dates (compare local date only)
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const sDateOnly = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+  if (sDateOnly < today) return res.status(400).json({ error: 'startDate cannot be in the past' });
   const days = parseInt(durationDays, 10);
   if (Number.isNaN(days) || days <= 0) return res.status(400).json({ error: 'Invalid durationDays' });
   const e = new Date(s);

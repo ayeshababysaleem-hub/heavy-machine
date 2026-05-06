@@ -1,0 +1,79 @@
+[
+  {
+    "id": "2eff2e5b-2771-46dc-8106-e9f776f6b7eb",
+    "name": "fa22-bcs-103",
+    "email": "fa22-bcs-103@cuivehari.edu.pk",
+    "password": "$2a$10$5YNWSaI3sxFQlrFHZVRw5OJqX4vWb1gEH7pW4v8cHjysamWNWxHGW",
+    "role": "Customer",
+    "verified": 1,
+    "cnic": null,
+    "verificationToken": "6d5aefb5-847f-4969-8975-602dc44a2886",
+    "createdAt": "2026-05-04T09:17:49.000Z"
+  },
+  {
+    "id": "5a55f167-49dc-434f-a7f3-1622da411423",
+    "name": "Ayesha Saleem",
+    "email": "ayeshasaleemvhr13@gmail.com",
+    "password": "$2a$10$HeQSgzzzAbH1Yy6kPDGlguiaMiPYjh3XMgQ/zN71C1JaEul1GGNwa",
+    "role": "Admin",
+    "verified": 1,
+    "cnic": null,
+    "verificationToken": null,
+    "createdAt": "2026-05-04T09:17:49.000Z"
+  },
+  {
+    "id": "789a29e8-72c6-4054-b445-9d4f1a64d501",
+    "name": "Ayesha",
+    "email": "ayeshasaleem123123@gmail.com",
+    "password": "$2a$10$I5vfiLdf1N3OkxYtQnx.F.IQytXqHq1Cm05bbwrcCK8t20aYdeejq",
+    "role": "Customer",
+    "verified": 0,
+    "cnic": null,
+    "verificationToken": "87e3c5fd-db03-482c-b30a-663c4653b117",
+    "createdAt": "2026-05-04T15:59:42.000Z"
+  },
+  {
+    "id": "984dc1dc-1b1f-48fc-bb71-2e0087576f08",
+    "name": "ali",
+    "email": "ali@gmail.com",
+    "password": "$2a$10$RfBOSR0eCy.ZhRtDNK9ARe5ac1DqvHc42wX5GcOneke7FglT/RqAK",
+    "role": "Admin",
+    "verified": 0,
+    "cnic": null,
+    "verificationToken": "2e943ec3-71f4-4dbf-88c0-44ae0c298514",
+    "createdAt": "2026-05-06T14:30:43.000Z"
+  },
+  {
+    "id": "bad033f2-18e2-451e-8b74-8f76b9690601",
+    "name": "Parveen Akhtar",
+    "email": "parveenakhtarvhr361@gmail.com",
+    "password": "$2a$10$6TWMjZ3jpQhf7/HHQ.Pr5eWmLdH50xQyXR7D/oVNlYQgqb/4538f.",
+    "role": "Owner",
+    "verified": 1,
+    "cnic": null,
+    "verificationToken": "7c773c27-08c3-4272-9ff4-42512d7f5a34",
+    "createdAt": "2026-05-04T09:17:49.000Z"
+  },
+  {
+    "id": "dda5af3a-8149-4168-9e17-cb193f2fe6bb",
+    "name": "kishwer alyas ",
+    "email": "kishweralyasalyas@gmail.com",
+    "password": "$2a$10$O.Q7DGS0HzP6L1hggjw9aeb9m62O7Qw57DDzSb/U6aHUc6BVcoPji",
+    "role": "Customer",
+    "verified": 1,
+    "cnic": null,
+    "verificationToken": null,
+    "createdAt": "2026-05-04T09:17:49.000Z"
+  },
+  {
+    "id": "fe136a04-f8c6-4488-88cd-0b7a866306f6",
+    "name": "Smoke Test",
+    "email": "smoke+1778077477581@gmail.com",
+    "password": "$2a$10$cIBs.sZuLPGBWSh8l9StyeC5F2eR2VNIzAfWY1MfozHeu3sMDq5Cu",
+    "role": "Customer",
+    "verified": 1,
+    "cnic": null,
+    "verificationToken": null,
+    "createdAt": "2026-05-06T14:24:37.000Z"
+  }
+]

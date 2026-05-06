@@ -4,8 +4,8 @@ const knex = require('../db');
 
 async function migrate(){
   if (!knex) return console.error('Knex not configured.');
-  const file = path.join(__dirname, '..', 'machines.json');
-  if (!fs.existsSync(file)) return console.error('machines.json not found');
+  const file = path.join(__dirname, '..', 'archive', 'machines.json');
+  if (!fs.existsSync(file)) return console.error('archive/machines.json not found');
   const raw = fs.readFileSync(file, 'utf8');
   let items = [];
   try{ items = JSON.parse(raw || '[]'); }catch(e){ console.error('Invalid machines.json', e); return }

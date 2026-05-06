@@ -5,6 +5,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "db:backup": "node scripts/backup-db.js",
+    "db:restore": "node scripts/restore-db.js",
+    "db:seed": "node scripts/seed-db.js",
     "migrate": "npx knex migrate:latest --knexfile knexfile.js",
     "migrate:make": "npx knex migrate:make",
     "import:users": "node scripts/migrate-users-to-mysql.js",

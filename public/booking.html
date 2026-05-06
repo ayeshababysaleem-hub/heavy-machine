@@ -58,6 +58,20 @@
     </main>
 
     <footer class="site-footer">
+          <script>
+            // Set min date for booking to today
+            document.addEventListener('DOMContentLoaded', function() {
+              const dateInput = document.querySelector('input[name="startDate"]');
+              if (dateInput) {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                const minDate = `${yyyy}-${mm}-${dd}`;
+                dateInput.min = minDate;
+              }
+            });
+          </script>
       <div class="container">© 2026 My Project</div>
     </footer>
 
@@ -93,61 +107,33 @@
     const machineId = params.get('machineId');
     if (machineId) document.querySelector('[name=machineId]').value = machineId;
 
-    // show machine info if machineId present and require Customer login before booking
+    // show machine info if machineId present
     async function loadMachineInfo(){
       const mid = document.querySelector('[name=machineId]').value;
       const infoEl = document.getElementById('machineInfo');
-      const form = document.getElementById('bookingForm');
       if (!mid){ infoEl.textContent = ''; return }
       try{
         const r = await fetch('/api/machines/' + encodeURIComponent(mid));
         if (!r.ok){ infoEl.textContent = ''; return }
         const m = await r.json();
         const price = (typeof m.price !== 'undefined' && m.price !== null) ? Number(m.price) : 0;
-        // show availability status to the user
-        let statusText = '';
-        if ((m.status || 'approved') === 'approved') statusText = '<span style="color:#16a34a;font-weight:700">Available</span>';
-        else if ((m.status || '') === 'booked') statusText = '<span style="color:#ef4444;font-weight:700">Not available</span>';
-        else statusText = `<span style="color:#f59e0b;font-weight:700">${m.status||'Pending'}</span>`;
-        infoEl.innerHTML = `<strong>${m.name || 'Unnamed machine'}</strong> — ${m.model || ''} — ₨ ${price.toFixed(2)}<div style="margin-top:6px">Status: ${statusText}</div>`;
-
-        // enforce login/role requirement: only Customers can proceed to book
-        const token = localStorage.getItem('token');
-        if (!token) {
-          // redirect to login and return to this booking page after login
-          const next = '/booking.html?machineId=' + encodeURIComponent(mid);
-          return location = '/login.html?next=' + encodeURIComponent(next);
-        }
-        // fetch user info
-        const me = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
-        if (!me.ok) {
-          // session invalid — redirect to login
-          const next = '/booking.html?machineId=' + encodeURIComponent(mid);
-          return location = '/login.html?next=' + encodeURIComponent(next);
-        }
-        const user = await me.json();
-        // only Customers allowed to book
-        if (user.role !== 'Customer'){
-          form.querySelectorAll('input,button').forEach(el => { if (el.type !== 'hidden') el.disabled = true; });
-          const note = document.createElement('div'); note.style.marginTop='12px'; note.style.color='#ffb4b4';
-          note.innerHTML = 'You must be logged in as a <strong>Customer</strong> to create a booking.';
-          infoEl.appendChild(note);
-          return;
-        }
-
-        // If machine is not approved, disable the form and inform the user
-        if ((m.status || 'approved') !== 'approved'){
-          form.querySelectorAll('input,button').forEach(el => { if (el.type !== 'hidden') el.disabled = true; });
-          const note = document.createElement('div'); note.style.marginTop='12px'; note.style.color='#ef4444';
-          note.innerHTML = 'This machine is currently not available for booking.';
-          infoEl.appendChild(note);
-        } else {
-          // prefill user fields for convenience
-          try{ if (user.name) document.querySelector('[name=name]').value = user.name; if (user.email) document.querySelector('[name=email]').value = user.email; }catch(e){}
-        }
+        infoEl.innerHTML = `<strong>${m.name || 'Unnamed machine'}</strong> — ${m.model || ''} — ₨ ${price.toFixed(2)}`;
       }catch(e){ console.error('load machine info failed', e); infoEl.textContent = ''; }
     }
     loadMachineInfo();
+
+    async function tryPrefillUser(){
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try{
+        const r = await fetch('/api/me', { headers: { Authorization: 'Bearer '+token } });
+        if (!r.ok) return;
+        const u = await r.json();
+        if (u.name) document.querySelector('[name=name]').value = u.name;
+        if (u.email) document.querySelector('[name=email]').value = u.email;
+      }catch(e){ console.error('prefill user failed', e) }
+    }
+    tryPrefillUser();
 
     document.getElementById('bookingForm').addEventListener('submit', async (e)=>{
       e.preventDefault();

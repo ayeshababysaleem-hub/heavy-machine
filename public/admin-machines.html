@@ -113,9 +113,8 @@
           try{
             const r = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'approve' }) });
             if (!r.ok) return await showAlert('Error','Failed to approve');
-            // update the status cell in-place so admin sees immediate feedback
-            try{ tr.children[2].textContent = 'approved'; }catch(e){}
-            approveBtn.disabled = true; rejectBtn.disabled = true;
+            // update status cell in-place to give immediate feedback
+            try{ const statusCell = tr.querySelector('td:nth-child(3)'); if (statusCell) statusCell.textContent = 'approved'; }catch(e){}
             await showAlert('Success','Machine approved');
           }catch(err){ console.error(err); await showAlert('Error','Network error') }
         });
@@ -124,8 +123,8 @@
           try{
             const r = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'reject' }) });
             if (!r.ok) return await showAlert('Error','Failed to reject');
-            try{ tr.children[2].textContent = 'rejected'; }catch(e){}
-            approveBtn.disabled = true; rejectBtn.disabled = true;
+            // update status cell in-place to give immediate feedback
+            try{ const statusCell = tr.querySelector('td:nth-child(3)'); if (statusCell) statusCell.textContent = 'rejected'; }catch(e){}
             await showAlert('Success','Machine rejected');
           }catch(err){ console.error(err); await showAlert('Error','Network error') }
         });

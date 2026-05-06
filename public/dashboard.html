@@ -602,7 +602,7 @@
           else if (m.status === 'rejected') { statusText = 'Rejected'; statusColor = '#6b7280'; }
           else { statusText = m.status || ''; statusColor = '#6b7280'; }
           let statusBadge = '';
-          if (currentUser && statusText) {
+            if (statusText) {
             statusBadge = `<div style="font-size:0.8rem;padding:6px;border-radius:6px;background:${statusColor};display:inline-block;color:#fff;margin-bottom:8px">${statusText}</div>`;
           }
           const priceText = (typeof m.price !== 'undefined' && m.price !== null && m.price !== '') ? ('₨ ' + Number(m.price).toFixed(2)) : '';

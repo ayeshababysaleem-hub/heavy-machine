@@ -108,26 +108,28 @@
         const price = (typeof m.price!=='undefined' && m.price!==null && m.price!=='')? ('₨ '+Number(m.price).toFixed(2)) : '—';
         tr.innerHTML = `<td style="padding:8px">${m.name||'-'}</td><td style="padding:8px">${m.ownerId||'-'}</td><td style="padding:8px">${m.status||'-'}</td><td style="padding:8px">${price}</td>`;
         const actionsTd = document.createElement('td'); actionsTd.style.padding='8px';
-        if ((m.status || '').toLowerCase() === 'approved'){
-          const approvedBtn = document.createElement('button'); approvedBtn.textContent = 'Approved'; approvedBtn.disabled = true; approvedBtn.style.marginRight = '8px'; approvedBtn.style.opacity = '0.8';
-          const deleteBtn = document.createElement('button'); deleteBtn.textContent = 'Delete'; deleteBtn.style.background = 'linear-gradient(90deg,#ef4444,#dc2626)'; deleteBtn.style.color = '#fff'; deleteBtn.style.padding = '8px 12px'; deleteBtn.style.borderRadius = '6px'; deleteBtn.style.border = '0'; deleteBtn.style.cursor = 'pointer'; deleteBtn.style.fontSize = '0.9rem'; deleteBtn.style.fontWeight = '600';
-          deleteBtn.addEventListener('click', async ()=>{
-            const ok = await showConfirm('Delete Machine', 'Delete this machine and all related data? This cannot be undone.'); if (!ok) return;
-            const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
-            try{ const r = await fetch('/api/machines/'+m.id, { method: 'DELETE', headers: { 'authorization': 'Bearer ' + token } }); if (!r.ok) return await showAlert('Error','Failed to delete'); await showAlert('Success','Machine deleted'); loadMachines(); }catch(err){ console.error(err); await showAlert('Error','Network error') }
-          });
-          actionsTd.appendChild(approvedBtn); actionsTd.appendChild(deleteBtn);
-        } else {
-          const approveBtn = document.createElement('button'); approveBtn.textContent='Approve'; approveBtn.style.marginRight='8px'; approveBtn.addEventListener('click', async ()=>{
-            const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
-            try{ const r = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'approve' }) }); if (!r.ok) return await showAlert('Error','Failed to approve'); await showAlert('Success','Machine approved'); loadMachines(); }catch(err){ console.error(err); await showAlert('Error','Network error') }
-          });
-          const rejectBtn = document.createElement('button'); rejectBtn.textContent='Reject'; rejectBtn.addEventListener('click', async ()=>{
-            const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
-            try{ const r = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'reject' }) }); if (!r.ok) return await showAlert('Error','Failed to reject'); await showAlert('Success','Machine rejected'); loadMachines(); }catch(err){ console.error(err); await showAlert('Error','Network error') }
-          });
-          actionsTd.appendChild(approveBtn); actionsTd.appendChild(rejectBtn);
-        }
+        const approveBtn = document.createElement('button'); approveBtn.textContent='Approve'; approveBtn.style.marginRight='8px'; approveBtn.addEventListener('click', async ()=>{
+          const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
+          try{
+            const r = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'approve' }) });
+            if (!r.ok) return await showAlert('Error','Failed to approve');
+            // update the status cell in-place so admin sees immediate feedback
+            try{ tr.children[2].textContent = 'approved'; }catch(e){}
+            approveBtn.disabled = true; rejectBtn.disabled = true;
+            await showAlert('Success','Machine approved');
+          }catch(err){ console.error(err); await showAlert('Error','Network error') }
+        });
+        const rejectBtn = document.createElement('button'); rejectBtn.textContent='Reject'; rejectBtn.addEventListener('click', async ()=>{
+          const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
+          try{
+            const r = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'reject' }) });
+            if (!r.ok) return await showAlert('Error','Failed to reject');
+            try{ tr.children[2].textContent = 'rejected'; }catch(e){}
+            approveBtn.disabled = true; rejectBtn.disabled = true;
+            await showAlert('Success','Machine rejected');
+          }catch(err){ console.error(err); await showAlert('Error','Network error') }
+        });
+        actionsTd.appendChild(approveBtn); actionsTd.appendChild(rejectBtn);
         tr.appendChild(actionsTd); tbody.appendChild(tr);
       });
       table.appendChild(tbody); out.appendChild(table);

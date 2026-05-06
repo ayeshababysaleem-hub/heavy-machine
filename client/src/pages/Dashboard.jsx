@@ -138,7 +138,10 @@ export default function Dashboard(){
               <img src={m.image} alt={m.name} style={{width:'100%',borderRadius:8,marginBottom:8}} />
               <h4>{m.name}</h4>
               <p style={{color:'#6b7280'}}>{m.description}</p>
-              <p style={{color:'#94a3b8',marginTop:6,fontSize:'0.95rem'}}>{m.type} • {m.model || ''} • {m.location || ''}</p>
+              <p style={{color:'#94a3b8',marginTop:6,fontSize:'0.95rem'}}>
+                {m.type} • {m.model || ''} • {m.location || ''}
+                <span style={{marginLeft:8}}>{(typeof m.price !== 'undefined' && m.price !== null && m.price !== '') ? ('₨ ' + Number(m.price).toFixed(2)) : '—'}</span>
+              </p>
               {(user && (user.role === 'Admin' || user.id === m.ownerId)) && (
                 <div style={{marginTop:8}}>
                   <button onClick={()=>editMachine(m)} style={{marginRight:8}}>Edit</button>

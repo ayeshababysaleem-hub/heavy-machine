@@ -49,12 +49,16 @@
         const res = await fetch('/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) });
         const json = await res.json();
         if (!res.ok) {
-          msg.textContent = json.error || ('Login failed: ' + res.statusText);
-          return;
-        }
+              msg.textContent = json.error || ('Login failed: ' + res.statusText);
+              return;
+            }
         if (json.error) { msg.textContent = json.error; return; }
         localStorage.setItem('token', json.token);
-        window.location = '/dashboard.html';
+        // support redirect back to previous page via ?next=/path
+        const params = new URLSearchParams(location.search);
+        const next = params.get('next');
+        try { window.location = next && next.startsWith('/') ? next : '/dashboard.html'; }
+        catch(e) { window.location = '/dashboard.html'; }
       }catch(err){
         msg.textContent = 'Network error: ' + (err.message || err);
       }

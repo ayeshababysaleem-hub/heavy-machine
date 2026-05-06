@@ -569,6 +569,16 @@
       // owner controls state
       let currentUser = null;
 
+      // attempt to load current user from token so booking controls render correctly
+      (async function initCurrentUser(){
+        try{
+          const token = localStorage.getItem('token');
+          if (!token) return;
+          const res = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
+          if (res.ok){ const u = await res.json(); currentUser = u; window.currentUser = u; updateOwnerControls(); }
+        }catch(e){ console.warn('Failed to load current user', e); }
+      })();
+
       // load machines with search/filter
       let machinesList = [];
       let currentPage = 1;

@@ -616,23 +616,18 @@
           // booking button: customers can book; guests see a login prompt button
           const isAvailable = (m.status || 'approved') === 'approved';
           if (isAvailable) {
-            // Always show Book button; guests will be redirected to login with a return URL
-            const bookBtn = document.createElement('button');
-            bookBtn.textContent = 'Book';
-            bookBtn.style.marginTop = '8px';
-            bookBtn.style.marginRight = '6px';
-            bookBtn.addEventListener('click', ()=>{
-              // if logged-in customer and not the owner, go to booking page
-              if (currentUser && currentUser.role === 'Customer' && currentUser.id !== m.ownerId) {
+            // Only show Book button to logged-in Customers (not owners). Guests won't see booking controls.
+            if (currentUser && currentUser.role === 'Customer' && currentUser.id !== m.ownerId) {
+              const bookBtn = document.createElement('button');
+              bookBtn.textContent = 'Book';
+              bookBtn.style.marginTop = '8px';
+              bookBtn.style.marginRight = '6px';
+              bookBtn.addEventListener('click', ()=>{
                 const params = new URLSearchParams({ machineId: m.id });
                 window.location = '/booking.html?' + params.toString();
-                return;
-              }
-              // otherwise redirect to login and include return url
-              const ret = encodeURIComponent('/booking.html?machineId=' + encodeURIComponent(m.id));
-              window.location = '/login.html?next=' + ret;
-            });
-            d.appendChild(bookBtn);
+              });
+              d.appendChild(bookBtn);
+            }
           } else {
             const na = document.createElement('div'); na.textContent = 'Not available for booking'; na.style.marginTop='8px'; na.style.color='#ef4444'; d.appendChild(na);
           }

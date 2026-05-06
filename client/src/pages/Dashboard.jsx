@@ -10,10 +10,19 @@ export default function Dashboard(){
   useEffect(()=>{ load() }, [])
   async function load(){
     const token = localStorage.getItem('token')
-    if (!token) { setMsg('Not logged in'); return }
-    const res = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } })
-    if (!res.ok) { setMsg('Session invalid'); return }
-    const j = await res.json(); setUser(j)
+    if (token) {
+      try{
+        const res = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } })
+        if (res.ok) {
+          const j = await res.json(); setUser(j)
+        } else {
+          setUser(null)
+        }
+      }catch(e){ setUser(null) }
+    } else {
+      setUser(null)
+    }
+    // Always load machines (guests may view availability)
     await loadMachines(1)
   }
 
@@ -142,6 +151,11 @@ export default function Dashboard(){
                 {m.type} • {m.model || ''} • {m.location || ''}
                 <span style={{marginLeft:8}}>{(typeof m.price !== 'undefined' && m.price !== null && m.price !== '') ? ('₨ ' + Number(m.price).toFixed(2)) : '—'}</span>
               </p>
+              {/* Booking controls */}
+              {m.status !== 'approved' && (
+                <div style={{marginTop:8,color:'#ef4444'}}>Not available for booking</div>
+              )}
+
               {(user && (user.role === 'Admin' || user.id === m.ownerId)) && (
                 <div style={{marginTop:8}}>
                   <button onClick={()=>editMachine(m)} style={{marginRight:8}}>Edit</button>
@@ -155,6 +169,12 @@ export default function Dashboard(){
                       await loadMachines(page)
                     }}>Approve</button>
                   )}
+                </div>
+              )}
+              {/* Show Book button to logged-in Customers when machine is approved and they are not the owner */}
+              {(m.status === 'approved' && user && user.role === 'Customer' && user.id !== m.ownerId) && (
+                <div style={{marginTop:8}}>
+                  <button onClick={()=>{ const params = new URLSearchParams({ machineId: m.id }); location.href = '/booking.html?' + params.toString(); }}>Book</button>
                 </div>
               )}
             </div>

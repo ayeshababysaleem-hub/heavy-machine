@@ -179,6 +179,10 @@
       const res = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
       if (!res.ok) return (document.getElementById('info').textContent = 'Session invalid');
       const user = await res.json();
+      // expose current user to page-level scripts so owner/customer controls render correctly
+      window.currentUser = user;
+      currentUser = user;
+      updateOwnerControls();
       const el = document.getElementById('info');
       el.innerHTML = `<p>Name: ${user.name}</p><p>Email: ${user.email}</p><p>Role: ${user.role}</p>`;
 

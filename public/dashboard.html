@@ -603,7 +603,7 @@
           }
           const priceText = (typeof m.price !== 'undefined' && m.price !== null && m.price !== '') ? ('₨ ' + Number(m.price).toFixed(2)) : '';
           let priceHtml = '';
-          if (priceText && currentUser) {
+          if (priceText) {
             priceHtml = `<div style="font-weight:700;color:#10b981;margin-top:6px">${priceText}</div>`;
           }
           d.innerHTML = `${statusBadge}<img src="${m.image}" alt="${m.name}" style="width:100%;border-radius:8px;margin-bottom:8px" /><h4>${m.name}</h4>${priceHtml}<p style="color:#6b7280">${m.description}</p><p style="color:#94a3b8;margin-top:6px;font-size:0.95rem">${m.type} • ${m.model||''} • ${m.location||''}</p>`;

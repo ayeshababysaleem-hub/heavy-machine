@@ -101,11 +101,11 @@
       const out = document.getElementById('bookingsList'); out.innerHTML='';
       if (!list || list.length===0){ out.textContent='No bookings found.'; return }
       const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse';
-      const thead = document.createElement('thead'); thead.innerHTML = '<tr><th style="text-align:left;padding:8px">Machine ID</th><th style="text-align:left;padding:8px">Dates</th><th style="text-align:left;padding:8px">Customer</th><th style="text-align:left;padding:8px">Phone</th><th style="text-align:left;padding:8px">Duration</th></tr>';
+      const thead = document.createElement('thead'); thead.innerHTML = '<tr><th style="text-align:left;padding:8px">Machine ID</th><th style="text-align:left;padding:8px">Dates</th><th style="text-align:left;padding:8px">Customer</th><th style="text-align:left;padding:8px">Customer Account</th><th style="text-align:left;padding:8px">Phone</th><th style="text-align:left;padding:8px">Duration</th></tr>';
       table.appendChild(thead); const tbody = document.createElement('tbody');
       list.forEach(b=>{
         const tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.02)';
-        tr.innerHTML = `<td style="padding:8px">${b.machineId||'—'}</td><td style="padding:8px">${b.startDate} → ${b.endDate}</td><td style="padding:8px">${b.name||'—'}</td><td style="padding:8px">${b.phone||'—'}</td><td style="padding:8px">${b.durationDays} days</td>`;
+        tr.innerHTML = `<td style="padding:8px">${b.machineId||'—'}</td><td style="padding:8px">${b.startDate} → ${b.endDate}</td><td style="padding:8px">${b.name||'—'}</td><td style="padding:8px">${b.customerAccount||'—'}</td><td style="padding:8px">${b.phone||'—'}</td><td style="padding:8px">${b.durationDays} days</td>`;
         tbody.appendChild(tr);
       });
       table.appendChild(tbody); out.appendChild(table);

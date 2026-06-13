@@ -37,6 +37,16 @@
     </footer>
   </div>
   <script>
+    // Show message when redirected after successful registration
+    (function(){
+      const msgEl = document.getElementById('msg');
+      try{
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('registered') === '1') {
+          msgEl.textContent = 'Registration successful. Please login.';
+        }
+      }catch(e){/* ignore */}
+    })();
     document.getElementById('login').addEventListener('submit', async e => {
       e.preventDefault();
       const fd = new FormData(e.target);

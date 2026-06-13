@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Booking</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+  <style>
+    /* style for booked dates */
+    .booked-date a { background:#f3f4f6 !important; color:#9ca3af !important; }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 </head>
 <body>
   <div class="site">
@@ -45,10 +52,16 @@
             <input name="address" type="text" required />
           </label>
           <label>Start date (YYYY-MM-DD)
-            <input name="startDate" type="date" required />
+            <input id="startDate" name="startDate" type="text" required autocomplete="off" />
           </label>
           <label>Duration (days)
             <input name="durationDays" type="number" min="1" required />
+          </label>
+          <label>Security Deposit (₨)
+            <input name="securityDeposit" type="number" min="0" step="0.01" placeholder="0" value="200000" />
+          </label>
+          <label>Customer account (for refund/account number)
+            <input name="customerAccount" type="text" placeholder="e.g., 03001234567 or Account #" />
           </label>
           <!-- Booking location removed per admin request -->
           <div style="margin-top:12px"><button type="submit">Proceed to Payment</button></div>
@@ -59,18 +72,43 @@
 
     <footer class="site-footer">
           <script>
-            // Set min date for booking to today
-            document.addEventListener('DOMContentLoaded', function() {
-              const dateInput = document.querySelector('input[name="startDate"]');
-              if (dateInput) {
-                const today = new Date();
-                const yyyy = today.getFullYear();
-                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                const dd = String(today.getDate()).padStart(2, '0');
-                const minDate = `${yyyy}-${mm}-${dd}`;
-                dateInput.min = minDate;
+            // Initialize jQuery UI datepicker and set minDate to today
+          document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const minDateStr = `${yyyy}-${mm}-${dd}`;
+
+            // helper to check if a date (Date) is within any disabled range
+            function isDateDisabled(date){
+              if (!window._disabledRanges || !Array.isArray(window._disabledRanges)) return false;
+              const ymd = date.toISOString().slice(0,10);
+              for (const r of window._disabledRanges){
+                if (ymd >= r.from && ymd <= r.to) return true;
+              }
+              return false;
+            }
+
+            const el = document.getElementById('startDate');
+            if (!el) return;
+
+            // initialize datepicker
+            $(el).datepicker({
+              dateFormat: 'yy-mm-dd',
+              minDate: 0,
+              showButtonPanel: true,
+              beforeShowDay: function(date){
+                const disabled = isDateDisabled(date);
+                return [!disabled, disabled ? 'booked-date' : '', disabled ? 'Booked' : ''];
+              },
+              onSelect: function(dateText){
+                const dur = document.querySelector('[name="durationDays"]').value;
+                const mid = document.querySelector('[name="machineId"]').value;
+                if (mid && dateText && dur){ checkAvailability(mid, dateText, dur).then(r=>{ const infoEl = document.getElementById('result'); infoEl.textContent = r.ok ? '' : 'Machine is already booked for the selected dates'; }); }
               }
             });
+          });
           </script>
       <div class="container">© 2026 My Project</div>
     </footer>
@@ -118,9 +156,82 @@
         const m = await r.json();
         const price = (typeof m.price !== 'undefined' && m.price !== null) ? Number(m.price) : 0;
         infoEl.innerHTML = `<strong>${m.name || 'Unnamed machine'}</strong> — ${m.model || ''} — ₨ ${price.toFixed(2)}`;
+        // update flatpickr disabled ranges for this machine
+        try{ await updateDisabledDatesForMachine(mid); }catch(e){ console.error('updateDisabledDatesForMachine failed', e); }
       }catch(e){ console.error('load machine info failed', e); infoEl.textContent = ''; }
     }
     loadMachineInfo();
+
+    // Check availability for selected machine/start/duration against non-rejected bookings
+    async function checkAvailability(mid, startDate, durationDays){
+      if (!mid || !startDate || !durationDays) return { ok: true };
+      try{
+        const q = '/api/bookings?machineId=' + encodeURIComponent(mid);
+        const r = await fetch(q);
+        if (!r.ok) return { ok: true };
+        const js = await r.json();
+        const list = js.data || [];
+        const s = new Date(startDate);
+        const days = Math.max(1, parseInt(durationDays, 10) || 1);
+        const e = new Date(s);
+        e.setDate(e.getDate() + days - 1);
+        for (const b of list){
+          const status = (b.status || 'pending');
+          if (status === 'rejected') continue; // ignore rejected bookings
+          const bs = new Date(b.startDate);
+          const be = new Date(b.endDate);
+          if (!(e < bs || s > be)){
+            return { ok: false, booking: b };
+          }
+        }
+        return { ok: true };
+      }catch(e){ console.error('availability check failed', e); return { ok: true } }
+    }
+
+    // fetch bookings and set flatpickr disable ranges (ignore rejected bookings)
+    async function updateDisabledDatesForMachine(mid){
+      if (!mid) return;
+      try{
+        const r = await fetch('/api/bookings?machineId=' + encodeURIComponent(mid));
+        if (!r.ok) return;
+        const js = await r.json();
+        const list = js.data || [];
+        const ranges = [];
+        for (const b of list){
+          const status = (b.status || 'pending');
+          if (status === 'rejected') continue;
+          if (!b.startDate || !b.endDate) continue;
+          ranges.push({ from: b.startDate.slice(0,10), to: b.endDate.slice(0,10) });
+        }
+        window._disabledRanges = ranges;
+        // refresh datepicker UI if present
+        try{ if (window.jQuery && $('#startDate').data('datepicker')){ $('#startDate').datepicker('refresh'); } }catch(e){ /* ignore */ }
+      }catch(e){ console.error('failed to update disabled dates', e); }
+    }
+
+    // live-validate availability when startDate or duration changes
+    (function attachAvailabilityHandlers(){
+      const form = document.getElementById('bookingForm');
+      if (!form) return;
+      const startInput = form.elements['startDate'];
+      const durInput = form.elements['durationDays'];
+      const infoEl = document.getElementById('result');
+      async function validate(){
+        const mid = document.querySelector('[name=machineId]').value;
+        const sd = startInput && startInput.value;
+        const dd = durInput && durInput.value;
+        if (!mid || !sd || !dd){ infoEl.textContent = ''; return }
+        infoEl.textContent = 'Checking availability...';
+        const res = await checkAvailability(mid, sd, dd);
+        if (!res.ok){
+          infoEl.textContent = 'Machine is already booked for the selected dates';
+        } else {
+          infoEl.textContent = '';
+        }
+      }
+      if (startInput) startInput.addEventListener('change', validate);
+      if (durInput) durInput.addEventListener('input', validate);
+    })();
 
     async function tryPrefillUser(){
       const token = localStorage.getItem('token');
@@ -164,16 +275,23 @@
         return;
       }
 
+      // check availability first
+      const avail = await checkAvailability(f.machineId.value, f.startDate.value, f.durationDays.value);
+      if (!avail.ok){ await showAlert('Unavailable', 'Machine is already booked for the selected dates'); return }
+
       const body = {
         machineId: f.machineId.value,
         startDate: f.startDate.value,
         durationDays: Number(f.durationDays.value),
+        securityDeposit: Number(f.securityDeposit && f.securityDeposit.value) || 0,
         name: f.name.value.trim(),
         email: f.email.value.trim(),
         cnic: f.cnic.value.trim(),
         phone: f.phone.value.trim(),
         address: f.address.value.trim()
       };
+      // include customerAccount if provided
+      if (typeof f.customerAccount !== 'undefined') body.customerAccount = (f.customerAccount.value || '').trim() || null;
       // enrich booking with machine details (name/model/price) and store, then redirect
       (async function(){
         try{

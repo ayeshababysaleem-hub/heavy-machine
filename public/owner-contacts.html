@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Owner - Contact Messages</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>#navLogin{display:none !important}</style>
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/dashboard.html">Dashboard</a>
+          <a href="/login.html" id="navLogin">Login</a>
+          <a href="#" id="navLogout" style="display:none;">Logout</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="padding-top:40px;">
+      <h2>Contact Messages</h2>
+      <div id="contactsList">Loading...</div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+  </div>
+
+  <script>
+    function createModals(){
+      if (document.getElementById('confirmModal')) return;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `
+      <div id="confirmModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+        <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+          <h3 id="confirmTitle" style="margin:0 0 12px 0;color:#e6eef8">Confirm Action</h3>
+          <p id="confirmMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Are you sure?</p>
+          <div style="display:flex;gap:12px;justify-content:flex-end">
+            <button id="confirmCancel" style="padding:10px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#e6eef8;cursor:pointer;font-weight:600;transition:all 0.2s">Cancel</button>
+            <button id="confirmOk" style="padding:10px 18px;border-radius:8px;border:0;background:linear-gradient(90deg,#ef4444,#dc2626);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">OK</button>
+          </div>
+        </div>
+      </div>
+      <div id="alertModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+        <div style="background:#0b1220;border-radius:14px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+          <h3 id="alertTitle" style="margin:0 0 12px 0;color:#e6eef8">Message</h3>
+          <p id="alertMessage" style="margin:0 0 24px 0;color:#94a3b8;line-height:1.5">Operation complete.</p>
+          <div style="display:flex;justify-content:flex-end">
+            <button id="alertOk" style="padding:10px 24px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">OK</button>
+          </div>
+        </div>
+      </div>
+      <div id="promptModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+        <div style="background:#0b1220;border-radius:14px;padding:18px;max-width:640px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+          <h3 id="promptTitle" style="margin:0 0 12px 0;color:#e6eef8">Type your reply</h3>
+          <textarea id="promptInput" placeholder="Type your reply here" style="width:100%;height:160px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:#e6eef8"></textarea>
+          <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:12px">
+            <button id="promptCancel" style="padding:10px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#e6eef8;cursor:pointer;font-weight:600;transition:all 0.2s">Cancel</button>
+            <button id="promptOk" style="padding:10px 18px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">Send</button>
+          </div>
+        </div>
+      </div>
+      `;
+      document.body.appendChild(wrapper);
+    }
+
+    // Prompt modal (returns string or null)
+    function showPrompt(title, placeholder){
+      return new Promise((resolve) => {
+        if (!document.getElementById('promptModal')) createModals();
+        const modal = document.getElementById('promptModal');
+        const titleEl = document.getElementById('promptTitle');
+        const input = document.getElementById('promptInput');
+        const okBtn = document.getElementById('promptOk');
+        const cancelBtn = document.getElementById('promptCancel');
+        titleEl.textContent = title || 'Input';
+        input.value = '';
+        input.placeholder = placeholder || '';
+        modal.style.display = 'flex';
+        const handleOk = () => { const val = input.value.trim(); cleanup(); resolve(val || null); };
+        const handleCancel = () => { cleanup(); resolve(null); };
+        const cleanup = () => { modal.style.display = 'none'; okBtn.removeEventListener('click', handleOk); cancelBtn.removeEventListener('click', handleCancel); document.removeEventListener('keydown', handleEscape); };
+        const handleEscape = (e) => { if (e.key === 'Escape') handleCancel(); };
+        okBtn.addEventListener('click', handleOk);
+        cancelBtn.addEventListener('click', handleCancel);
+        document.addEventListener('keydown', handleEscape);
+        input.focus();
+      });
+    }
+
+    function showAlert(title, message) {
+      return new Promise((resolve) => {
+        if (!document.getElementById('alertModal')) createModals();
+        const modal = document.getElementById('alertModal');
+        const titleEl = document.getElementById('alertTitle');
+        const msgEl = document.getElementById('alertMessage');
+        const okBtn = document.getElementById('alertOk');
+        titleEl.textContent = title; msgEl.textContent = message; modal.style.display = 'flex';
+        const handleOk = () => { cleanup(); resolve(); };
+        const cleanup = () => { modal.style.display = 'none'; okBtn.removeEventListener('click', handleOk); document.removeEventListener('keydown', handleEscape); };
+        const handleEscape = (e) => { if (e.key === 'Escape') handleOk(); };
+        okBtn.addEventListener('click', handleOk); document.addEventListener('keydown', handleEscape);
+      });
+    }
+
+    // Confirm modal (returns true if OK, false if Cancel)
+    function showConfirm(title, message){
+      return new Promise((resolve) => {
+        if (!document.getElementById('confirmModal')) createModals();
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmTitle');
+        const msgEl = document.getElementById('confirmMessage');
+        const okBtn = document.getElementById('confirmOk');
+        const cancelBtn = document.getElementById('confirmCancel');
+        titleEl.textContent = title || 'Confirm'; msgEl.textContent = message || '';
+        modal.style.display = 'flex';
+        const handleOk = () => { cleanup(); resolve(true); };
+        const handleCancel = () => { cleanup(); resolve(false); };
+        const cleanup = () => { modal.style.display = 'none'; okBtn.removeEventListener('click', handleOk); cancelBtn.removeEventListener('click', handleCancel); document.removeEventListener('keydown', handleEscape); };
+        const handleEscape = (e) => { if (e.key === 'Escape') handleCancel(); };
+        okBtn.addEventListener('click', handleOk); cancelBtn.addEventListener('click', handleCancel); document.addEventListener('keydown', handleEscape);
+      });
+    }
+
+    async function loadContacts(){
+      const token = localStorage.getItem('token'); if (!token) return (location = '/login.html');
+      try{
+        const res = await fetch('/api/owner/contacts', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) return await showAlert('Error','Failed to load contacts: '+res.status);
+        const j = await res.json(); renderContacts(j.data || []);
+      }catch(err){ console.error(err); await showAlert('Error','Network error while loading contacts') }
+    }
+
+    function renderContacts(list){
+      const out = document.getElementById('contactsList'); out.innerHTML = '';
+      if (!list || list.length === 0){ out.textContent = 'No messages found.'; return }
+      const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse';
+      const thead = document.createElement('thead'); thead.innerHTML = '<tr><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Email</th><th style="text-align:left;padding:8px">Phone</th><th style="text-align:left;padding:8px">Message</th><th style="text-align:left;padding:8px">Received</th><th style="text-align:left;padding:8px">Actions</th></tr>';
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      list.forEach(c => {
+        const tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+        const actionsTd = document.createElement('td'); actionsTd.style.padding='8px';
+        const replyBtn = document.createElement('button'); replyBtn.textContent = 'Reply'; replyBtn.style.marginRight='8px';
+        const delBtn = document.createElement('button'); delBtn.textContent = 'Delete';
+
+        replyBtn.addEventListener('click', async ()=>{
+          const reply = await showPrompt('Reply to message', 'Type your reply here'); if (reply === null) return;
+          const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
+          try{
+            const url = '/api/owner/contacts/'+encodeURIComponent(c.id)+'/reply';
+            console.log('POST reply to', url);
+            const r = await fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer '+token, 'Content-Type': 'application/json', 'Accept':'application/json' }, body: JSON.stringify({ message: reply }) });
+            if (!r.ok){ const t = await r.text().catch(()=>'' ); console.error('Reply failed', r.status, t); return await showAlert('Error','Failed to send reply: '+r.status+' '+t) }
+            const j = await r.json().catch(()=>({}));
+            console.log('Reply success', j);
+            await showAlert('Success','Reply sent');
+            loadContacts();
+          }catch(err){ console.error('Network error while sending reply', err); await showAlert('Error','Network error while sending reply') }
+        });
+
+        delBtn.addEventListener('click', async ()=>{
+          const ok = await showConfirm('Delete message','Delete this message? This cannot be undone.'); if (!ok) return;
+          const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
+          try{
+            const url = '/api/owner/contacts/'+encodeURIComponent(c.id);
+            console.log('DELETE', url);
+            const r = await fetch(url, { method: 'DELETE', headers: { 'Authorization': 'Bearer '+token } });
+            if (!r.ok){ const t = await r.text().catch(()=>'' ); console.error('Delete failed', r.status, t); return await showAlert('Error','Failed to delete message: '+r.status+' '+t) }
+            await showAlert('Success','Message deleted');
+            loadContacts();
+          }catch(err){ console.error('Network error while deleting message', err); await showAlert('Error','Network error while deleting message') }
+        });
+
+        actionsTd.appendChild(replyBtn); actionsTd.appendChild(delBtn);
+        tr.innerHTML = `<td style="padding:8px">${c.name||'-'}</td><td style="padding:8px">${c.email}</td><td style="padding:8px">${c.phone}</td><td style="padding:8px">${c.message}</td><td style="padding:8px">${c.createdAt}</td>`;
+        tr.appendChild(actionsTd);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody); out.appendChild(table);
+    }
+
+    // show logout link
+    const tkn = localStorage.getItem('token'); if (tkn) document.getElementById('navLogout').style.display='inline-block';
+    document.getElementById('navLogout').addEventListener('click', ()=>{ localStorage.removeItem('token'); location='/login.html' });
+
+    loadContacts();
+  </script>
+</body>
+</html>

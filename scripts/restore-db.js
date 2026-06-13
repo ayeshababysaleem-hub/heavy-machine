@@ -4,10 +4,21 @@ const knex = require('../db');
 
 async function restore(file, { wipe=false } = {}){
   if (!file) throw new Error('Backup file required');
-  const p = path.isAbsolute(file) ? file : path.join(__dirname, '..', file);
-  if (!fs.existsSync(p)) throw new Error('Backup file not found: '+p);
-  const raw = JSON.parse(fs.readFileSync(p,'utf8'));
-  const data = raw && raw.data ? raw.data : {};
+  let data = {};
+  if (file && file.startsWith('db:')){
+    // restore from DB backups table. Use 'db:latest' or 'db:<id>'
+    const key = file.split(':',2)[1] || 'latest';
+    let row;
+    if (key === 'latest') row = await knex('backups').orderBy('createdAt', 'desc').first();
+    else row = await knex('backups').where({ id: key }).first();
+    if (!row) throw new Error('No backup found in DB for '+file);
+    try{ data = JSON.parse(row.data || '{}'); }catch(e){ throw new Error('Invalid JSON in DB backup'); }
+  } else {
+    const p = path.isAbsolute(file) ? file : path.join(__dirname, '..', file);
+    if (!fs.existsSync(p)) throw new Error('Backup file not found: '+p);
+    const raw = JSON.parse(fs.readFileSync(p,'utf8'));
+    data = raw && raw.data ? raw.data : {};
+  }
   const order = ['users','machines','contacts','bookings','knex_migrations'];
   if (wipe){
     console.log('Wiping tables before restore');

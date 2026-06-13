@@ -13,17 +13,28 @@
     "import:users": "node scripts/migrate-users-to-mysql.js",
     "import:machines": "node scripts/migrate-machines-to-mysql.js",
     "import:bookings": "node scripts/migrate-bookings-to-mysql.js",
-    "import:contacts": "node scripts/migrate-contacts-to-mysql.js"
+    "import:contacts": "node scripts/migrate-contacts-to-mysql.js",
+    "test": "mocha --recursive tests --exit",
+    "test:watch": "mocha --recursive tests --watch"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
+    "express-rate-limit": "^6.11.2",
+    "joi": "^17.9.2",
+    "@sentry/node": "^7.27.0",
     "jsonwebtoken": "^9.0.0",
     "knex": "^2.5.1",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.22.3",
     "nodemailer": "^8.0.7",
     "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "nyc": "^15.1.0",
+    "supertest": "^6.3.3"
   }
 }

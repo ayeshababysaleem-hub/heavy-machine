@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import axios from 'axios'
 import Register from './pages/Register'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -12,6 +13,8 @@ function App(){
     return ()=> window.removeEventListener('hashchange', onHash)
   },[])
 
+  // reminders UI removed — no polling
+
   let view = null
   if (route.startsWith('#/register')) view = <Register />
   else if (route.startsWith('#/dashboard')) view = <Dashboard />
@@ -21,14 +24,19 @@ function App(){
   return (
     <div className="app">
       <header className="site-header">
-        <div className="container">
-          <div className="brand">My Project</div>
-          <nav className="nav">
-            <a href="#/">Home</a>
-            <a href="#/login">Login</a>
-            <a href="#/register">Register</a>
-            <a href="#/dashboard">Dashboard</a>
-          </nav>
+        <div className="container" style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <div className="brand">My Project</div>
+            <nav className="nav">
+              <a href="#/">Home</a>
+              <a href="#/login">Login</a>
+              <a href="#/register">Register</a>
+              <a href="#/dashboard">Dashboard</a>
+            </nav>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            {/* notifications removed */}
+          </div>
         </div>
       </header>
       <main className="container" style={{paddingTop:20}}>{view}</main>

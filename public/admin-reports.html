@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Reports</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>#navLogin{display:none !important}</style>
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand"><img src="/images/logo.png" alt="Logo" style="height:32px;vertical-align:middle;margin-right:8px"/>HEAVY MACHINE</div>
+        <nav class="site-nav">
+          <a href="/">Home</a>
+          <a href="/dashboard.html">Dashboard</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container" style="padding:40px 20px;max-width:1000px;margin:0 auto">
+      <div class="card">
+        <h2 style="margin-top:0">Admin Reports</h2>
+        <p>Generate CSV reports for Users, Bookings and Payments.</p>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px">
+          <div style="padding:16px;border-radius:8px;background:rgba(255,255,255,0.02)">
+            <h3>Users</h3>
+            <p style="margin:8px 0">Download list of all users.</p>
+            <div style="display:flex;gap:8px">
+              <button id="dlUsersCsv" class="btn" aria-label="Download users CSV">Download CSV</button>
+            </div>
+          </div>
+
+          <div style="padding:16px;border-radius:8px;background:rgba(255,255,255,0.02)">
+            <h3>Bookings</h3>
+            <p style="margin:8px 0">Download bookings export.</p>
+            <div style="display:flex;gap:8px">
+              <button id="dlBookingsCsv" class="btn" aria-label="Download bookings CSV">Download CSV</button>
+            </div>
+          </div>
+
+          <div style="padding:16px;border-radius:8px;background:rgba(255,255,255,0.02)">
+            <h3>Payments</h3>
+            <p style="margin:8px 0">Download payments export.</p>
+            <div style="display:flex;gap:8px">
+              <button id="dlPaymentsCsv" class="btn" aria-label="Download payments CSV">Download CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="output" style="margin-top:20px"></div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">© 2026 My Project</div>
+    </footer>
+  </div>
+
+  <script>
+    function showMessage(msg, isError){
+      const out = document.getElementById('output');
+      out.innerHTML = '<div style="padding:12px;border-radius:8px;background:' + (isError? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.04)') + ';border:1px solid rgba(255,255,255,0.04);">' + String(msg) + '</div>';
+    }
+
+    async function fetchBlob(url, token){
+      const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const ct = r.headers.get('content-type') || '';
+      const blob = await r.blob();
+      return { blob, contentType: ct, disposition: r.headers.get('content-disposition') };
+    }
+
+    function downloadBlob(blob, filename){
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'report.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function downloadReport(path, fallbackName){
+      const token = localStorage.getItem('token');
+      if (!token) return showMessage('Not authorized — log in first', true);
+      try{
+        showMessage('Generating report...');
+        const { blob, disposition } = await fetchBlob(path, token);
+        let fname = fallbackName || ('report-' + new Date().toISOString().slice(0,10) + '.csv');
+        if (disposition && disposition.indexOf('filename=') !== -1){
+          const m = disposition.match(/filename="?([^";]+)"?/);
+          if (m && m[1]) fname = m[1];
+        }
+        downloadBlob(blob, fname);
+        showMessage('Download started: ' + fname);
+      }catch(e){ console.error(e); showMessage('Failed to generate report: ' + e.message, true); }
+    }
+
+    document.getElementById('dlUsersCsv').addEventListener('click', ()=> downloadReport('/api/admin/reports/users', 'users.csv'));
+
+    document.getElementById('dlBookingsCsv').addEventListener('click', ()=> downloadReport('/api/admin/reports/bookings', 'bookings.csv'));
+
+    document.getElementById('dlPaymentsCsv').addEventListener('click', ()=> downloadReport('/api/admin/reports/payments', 'payments.csv'));
+  </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+[
+  {
+    "id": "05768a0a-595c-4c7b-a4f9-c948a9df2d40",
+    "name": "Bulldozer",
+    "type": "Bulldozer",
+    "model": "BD202",
+    "location": "Lahore",
+    "image": "/images/3f2c1e3f-6095-4d1d-a310-106e96ecd402.jpg",
+    "description": "Used for land clearing, earth moving and road building.",
+    "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+    "status": "booked",
+    "price": "60000.00",
+    "currentBookingId": "d3e2b607-a5b7-4890-84d0-7ab1a37f7dd6"
+  },
+  {
+    "id": "1d7ed094-89f3-4b6b-8b53-c16fbc9844b9",
+    "name": "Compactor",
+    "type": "Compactor",
+    "model": "CT224",
+    "location": "Lahore",
+    "image": "/images/9b2d6df3-fade-48d1-aa87-d6cec4532537.jpeg",
+    "description": "Used for creating a level grade and compacting crushed rocks.",
+    "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+    "status": "booked",
+    "price": "35000.00",
+    "currentBookingId": "c97033e7-7588-465d-a630-81494af52b5d"
+  },
+  {
+    "id": "2d008692-0643-46ca-bfb8-829af0bd4d5e",
+    "name": "Dump Truck",
+    "type": "Dump Truck",
+    "model": "DT222",
+    "location": " Lahore",
+    "image": "/images/9e5f84a8-775c-4847-879c-101b8643ba43.jpg",
+    "description": "Used for moving sand, gravel or demolition waste.",
+    "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+    "status": "approved",
+    "price": "45000.00",
+    "currentBookingId": null
+  },
+  {
+    "id": "c0f431f0-32f0-44cc-bd79-862387631fc5",
+    "name": "Excavator",
+    "type": "Excavator",
+    "model": "EX200",
+    "location": " Lahore",
+    "image": "/images/09c234fa-5504-47de-9aa9-70b09e3ad1be.jpg",
+    "description": "Used for digging, material handling and drilling.",
+    "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+    "status": "approved",
+    "price": "40000.00",
+    "currentBookingId": null
+  },
+  {
+    "id": "c263ea85-eb7d-402c-9a24-fcd4c6349b7f",
+    "name": "Motor Grader",
+    "type": "Motor Grader",
+    "model": "MG204",
+    "location": " Lahore",
+    "image": "/images/a4149301-5e59-401a-9ea8-55142d4e4e70.jpg",
+    "description": "Used for creating flat surfaces and road building.",
+    "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+    "status": "booked",
+    "price": "55000.00",
+    "currentBookingId": "fde88551-6484-4d9f-976d-0ad4be208431"
+  },
+  {
+    "id": "d78b8e0c-8d63-48fa-8480-82efa0bc8267",
+    "name": "Telehandler",
+    "type": "Telehandler",
+    "model": "TH220",
+    "location": " Lahore",
+    "image": "/images/3a5ffaf6-cfa3-4bd3-9808-249f559e7f30.jpg",
+    "description": "Used for moving and lifting material.",
+    "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+    "status": "approved",
+    "price": "90000.00",
+    "currentBookingId": null
+  }
+]

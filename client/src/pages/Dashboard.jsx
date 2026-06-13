@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import axios from 'axios'
 
 export default function Dashboard(){
   const [user,setUser]=useState(null)
@@ -24,6 +25,22 @@ export default function Dashboard(){
     }
     // Always load machines (guests may view availability)
     await loadMachines(1)
+    // load return reminders for logged-in customers
+    if (localStorage.getItem('token')) loadReminders()
+  }
+
+  const [reminders, setReminders] = useState([])
+  async function loadReminders(){
+    try{
+      const token = localStorage.getItem('token')
+      if (!token) return
+      const res = await axios.get('/api/my/returns', { headers: { Authorization: 'Bearer ' + token } })
+      const data = res.data && res.data.data ? res.data.data : []
+      setReminders(data || [])
+    }catch(e){
+      // fail silently; do not use alert()
+      console.error('Failed to load return reminders', e)
+    }
   }
 
   async function loadMachines(p=1){
@@ -115,6 +132,44 @@ export default function Dashboard(){
         </div>
       )}
 
+      {/* Return Reminder Cards */}
+      {reminders && reminders.length > 0 && (
+        <section style={{marginTop:18}}>
+          <h3>Return Reminders</h3>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:12,marginTop:8}}>
+            {reminders.map(r => {
+              const days = r.remainingDays
+              const isOverdue = (typeof days === 'number' && days < 0)
+              const isDueSoon = (typeof days === 'number' && days >= 0 && days <= 2)
+              const bg = isOverdue ? 'linear-gradient(90deg, rgba(255,70,70,0.06), rgba(255,70,70,0.02))' : (isDueSoon ? 'linear-gradient(90deg, rgba(251,191,36,0.06), rgba(251,191,36,0.02))' : 'linear-gradient(90deg, rgba(59,130,246,0.04), rgba(59,130,246,0.01))')
+              const border = isOverdue ? '1px solid rgba(255,70,70,0.2)' : (isDueSoon ? '1px solid rgba(251,191,36,0.2)' : '1px solid rgba(59,130,246,0.08)')
+              return (
+                <div key={r.id} className="card" style={{padding:12,background:bg,borderRadius:8,border}}> 
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div>
+                      <div style={{fontSize:'0.85rem',color:'#94a3b8'}}>Machine</div>
+                      <div style={{fontWeight:700,fontSize:'1rem'}}>{r.machineName || r.machineId}</div>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontSize:'0.85rem',color:'#94a3b8'}}>Return Date</div>
+                      <div style={{fontWeight:700,fontSize:'1rem'}}>{r.endDate}</div>
+                    </div>
+                  </div>
+                  <div style={{marginTop:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div style={{fontSize:'0.9rem',color:isOverdue? '#ef4444': (isDueSoon? '#f59e0b' : '#3b82f6')}}>
+                      {isOverdue ? 'Overdue' : (isDueSoon ? `Due in ${days} day${days===1?'':'s'}` : `Remaining ${days} day${days===1?'':'s'}`)}
+                    </div>
+                    <div>
+                      <button onClick={() => { location.href = '/booking.html?bookingId=' + r.id }} style={{padding:'6px 10px',borderRadius:8}}>View</button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
       <section style={{marginTop:18}}>
         <h3>Available Machinery</h3>
         <div style={{display:'flex',gap:8,marginTop:8,alignItems:'center'}}>
@@ -141,9 +196,16 @@ export default function Dashboard(){
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:12,marginTop:12}}>
           {filtered.map(m => (
             <div key={m.id} className="card">
-              {m.status && (
-                <div style={{fontSize:'0.8rem',padding:6,borderRadius:6,background: m.status==='approved' ? '#16a34a' : '#f59e0b',display:'inline-block',color:'#fff',marginBottom:8}}>{m.status}</div>
-              )}
+              {(() => {
+                const isGuestOrCustomer = !user || (user && user.role === 'Customer');
+                const status = (m.status === 'booked') ? 'Available' : (isGuestOrCustomer ? 'Available' : (m.status || ''));
+                let bg = '#6b7280';
+                if (status === 'Available' || status === 'approved') bg = '#16a34a';
+                else if (status === 'booked') bg = '#ef4444';
+                else if (status === 'pending') bg = '#f59e0b';
+                else if (status === 'rejected') bg = '#6b7280';
+                return status ? (<div style={{fontSize:'0.8rem',padding:6,borderRadius:6,background: bg,display:'inline-block',color:'#fff',marginBottom:8}}>{status}</div>) : null;
+              })()}
               <img src={m.image} alt={m.name} style={{width:'100%',borderRadius:8,marginBottom:8}} />
               <h4>{m.name}</h4>
               <p style={{color:'#6b7280'}}>{m.description}</p>
@@ -152,9 +214,6 @@ export default function Dashboard(){
                 <span style={{marginLeft:8}}>{(typeof m.price !== 'undefined' && m.price !== null && m.price !== '') ? ('₨ ' + Number(m.price).toFixed(2)) : '—'}</span>
               </p>
               {/* Booking controls */}
-              {m.status !== 'approved' && (
-                <div style={{marginTop:8,color:'#ef4444'}}>Not available for booking</div>
-              )}
 
               {(user && (user.role === 'Admin' || user.id === m.ownerId)) && (
                 <div style={{marginTop:8}}>
@@ -172,7 +231,7 @@ export default function Dashboard(){
                 </div>
               )}
               {/* Show Book button to logged-in Customers when machine is approved and they are not the owner */}
-              {(m.status === 'approved' && user && user.role === 'Customer' && user.id !== m.ownerId) && (
+              {((!user || user.role === 'Customer') && (!(user && user.id === m.ownerId))) && (
                 <div style={{marginTop:8}}>
                   <button onClick={()=>{ const params = new URLSearchParams({ machineId: m.id }); location.href = '/booking.html?' + params.toString(); }}>Book</button>
                 </div>

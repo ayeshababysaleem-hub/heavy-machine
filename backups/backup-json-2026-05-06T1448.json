@@ -1,0 +1,266 @@
+{
+  "createdAt": "2026-05-06T14:48:08.258Z",
+  "data": {
+    "users": [
+      {
+        "id": "2eff2e5b-2771-46dc-8106-e9f776f6b7eb",
+        "name": "fa22-bcs-103",
+        "email": "fa22-bcs-103@cuivehari.edu.pk",
+        "password": "$2a$10$5YNWSaI3sxFQlrFHZVRw5OJqX4vWb1gEH7pW4v8cHjysamWNWxHGW",
+        "role": "Customer",
+        "verified": 1,
+        "cnic": null,
+        "verificationToken": "6d5aefb5-847f-4969-8975-602dc44a2886",
+        "createdAt": "2026-05-04T09:17:49.000Z"
+      },
+      {
+        "id": "5a55f167-49dc-434f-a7f3-1622da411423",
+        "name": "Ayesha Saleem",
+        "email": "ayeshasaleemvhr13@gmail.com",
+        "password": "$2a$10$HeQSgzzzAbH1Yy6kPDGlguiaMiPYjh3XMgQ/zN71C1JaEul1GGNwa",
+        "role": "Admin",
+        "verified": 1,
+        "cnic": null,
+        "verificationToken": null,
+        "createdAt": "2026-05-04T09:17:49.000Z"
+      },
+      {
+        "id": "789a29e8-72c6-4054-b445-9d4f1a64d501",
+        "name": "Ayesha",
+        "email": "ayeshasaleem123123@gmail.com",
+        "password": "$2a$10$I5vfiLdf1N3OkxYtQnx.F.IQytXqHq1Cm05bbwrcCK8t20aYdeejq",
+        "role": "Customer",
+        "verified": 0,
+        "cnic": null,
+        "verificationToken": "87e3c5fd-db03-482c-b30a-663c4653b117",
+        "createdAt": "2026-05-04T15:59:42.000Z"
+      },
+      {
+        "id": "984dc1dc-1b1f-48fc-bb71-2e0087576f08",
+        "name": "ali",
+        "email": "ali@gmail.com",
+        "password": "$2a$10$RfBOSR0eCy.ZhRtDNK9ARe5ac1DqvHc42wX5GcOneke7FglT/RqAK",
+        "role": "Admin",
+        "verified": 0,
+        "cnic": null,
+        "verificationToken": "2e943ec3-71f4-4dbf-88c0-44ae0c298514",
+        "createdAt": "2026-05-06T14:30:43.000Z"
+      },
+      {
+        "id": "bad033f2-18e2-451e-8b74-8f76b9690601",
+        "name": "Parveen Akhtar",
+        "email": "parveenakhtarvhr361@gmail.com",
+        "password": "$2a$10$6TWMjZ3jpQhf7/HHQ.Pr5eWmLdH50xQyXR7D/oVNlYQgqb/4538f.",
+        "role": "Owner",
+        "verified": 1,
+        "cnic": null,
+        "verificationToken": "7c773c27-08c3-4272-9ff4-42512d7f5a34",
+        "createdAt": "2026-05-04T09:17:49.000Z"
+      },
+      {
+        "id": "dda5af3a-8149-4168-9e17-cb193f2fe6bb",
+        "name": "kishwer alyas ",
+        "email": "kishweralyasalyas@gmail.com",
+        "password": "$2a$10$O.Q7DGS0HzP6L1hggjw9aeb9m62O7Qw57DDzSb/U6aHUc6BVcoPji",
+        "role": "Customer",
+        "verified": 1,
+        "cnic": null,
+        "verificationToken": null,
+        "createdAt": "2026-05-04T09:17:49.000Z"
+      },
+      {
+        "id": "fe136a04-f8c6-4488-88cd-0b7a866306f6",
+        "name": "Smoke Test",
+        "email": "smoke+1778077477581@gmail.com",
+        "password": "$2a$10$cIBs.sZuLPGBWSh8l9StyeC5F2eR2VNIzAfWY1MfozHeu3sMDq5Cu",
+        "role": "Customer",
+        "verified": 1,
+        "cnic": null,
+        "verificationToken": null,
+        "createdAt": "2026-05-06T14:24:37.000Z"
+      }
+    ],
+    "machines": [
+      {
+        "id": "05768a0a-595c-4c7b-a4f9-c948a9df2d40",
+        "name": "Bulldozer",
+        "type": "Bulldozer",
+        "model": "BD202",
+        "location": "Lahore",
+        "image": "/images/3f2c1e3f-6095-4d1d-a310-106e96ecd402.jpg",
+        "description": "Used for land clearing, earth moving and road building.",
+        "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+        "status": "booked",
+        "price": "60000.00",
+        "currentBookingId": "d3e2b607-a5b7-4890-84d0-7ab1a37f7dd6"
+      },
+      {
+        "id": "1d7ed094-89f3-4b6b-8b53-c16fbc9844b9",
+        "name": "Compactor",
+        "type": "Compactor",
+        "model": "CT224",
+        "location": "Lahore",
+        "image": "/images/9b2d6df3-fade-48d1-aa87-d6cec4532537.jpeg",
+        "description": "Used for creating a level grade and compacting crushed rocks.",
+        "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+        "status": "booked",
+        "price": "35000.00",
+        "currentBookingId": "c97033e7-7588-465d-a630-81494af52b5d"
+      },
+      {
+        "id": "2d008692-0643-46ca-bfb8-829af0bd4d5e",
+        "name": "Dump Truck",
+        "type": "Dump Truck",
+        "model": "DT222",
+        "location": " Lahore",
+        "image": "/images/9e5f84a8-775c-4847-879c-101b8643ba43.jpg",
+        "description": "Used for moving sand, gravel or demolition waste.",
+        "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+        "status": "approved",
+        "price": "45000.00",
+        "currentBookingId": null
+      },
+      {
+        "id": "c0f431f0-32f0-44cc-bd79-862387631fc5",
+        "name": "Excavator",
+        "type": "Excavator",
+        "model": "EX200",
+        "location": " Lahore",
+        "image": "/images/09c234fa-5504-47de-9aa9-70b09e3ad1be.jpg",
+        "description": "Used for digging, material handling and drilling.",
+        "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+        "status": "approved",
+        "price": "40000.00",
+        "currentBookingId": null
+      },
+      {
+        "id": "c263ea85-eb7d-402c-9a24-fcd4c6349b7f",
+        "name": "Motor Grader",
+        "type": "Motor Grader",
+        "model": "MG204",
+        "location": " Lahore",
+        "image": "/images/a4149301-5e59-401a-9ea8-55142d4e4e70.jpg",
+        "description": "Used for creating flat surfaces and road building.",
+        "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+        "status": "booked",
+        "price": "55000.00",
+        "currentBookingId": "fde88551-6484-4d9f-976d-0ad4be208431"
+      },
+      {
+        "id": "d78b8e0c-8d63-48fa-8480-82efa0bc8267",
+        "name": "Telehandler",
+        "type": "Telehandler",
+        "model": "TH220",
+        "location": " Lahore",
+        "image": "/images/3a5ffaf6-cfa3-4bd3-9808-249f559e7f30.jpg",
+        "description": "Used for moving and lifting material.",
+        "ownerId": "bad033f2-18e2-451e-8b74-8f76b9690601",
+        "status": "approved",
+        "price": "90000.00",
+        "currentBookingId": null
+      }
+    ],
+    "contacts": [
+      {
+        "id": "a154f012-c910-49aa-9ba3-6e6938ae375f",
+        "name": "Ayesha",
+        "email": "a@b.com",
+        "phone": "+923001234567",
+        "message": "hi",
+        "createdAt": "2026-03-06T17:47:35.000Z"
+      }
+    ],
+    "bookings": [
+      {
+        "id": "381fd3dc-29c4-4a2e-acd7-b6ed3228f284",
+        "machineId": "c263ea85-eb7d-402c-9a24-fcd4c6349b7f",
+        "userId": "2eff2e5b-2771-46dc-8106-e9f776f6b7eb",
+        "startDate": "2026-05-06T19:00:00.000Z",
+        "endDate": "2026-05-07T19:00:00.000Z",
+        "durationDays": 2,
+        "location": "",
+        "name": "fa22-bcs-103",
+        "email": "fa22-bcs-103@cuivehari.edu.pk",
+        "cnic": "1234567890123",
+        "address": "Vehari",
+        "phone": "0303 4567321",
+        "status": "approved",
+        "createdAt": "2026-05-06T06:47:37.000Z"
+      },
+      {
+        "id": "c97033e7-7588-465d-a630-81494af52b5d",
+        "machineId": "1d7ed094-89f3-4b6b-8b53-c16fbc9844b9",
+        "userId": "2eff2e5b-2771-46dc-8106-e9f776f6b7eb",
+        "startDate": "2026-05-06T19:00:00.000Z",
+        "endDate": "2026-05-07T19:00:00.000Z",
+        "durationDays": 2,
+        "location": "",
+        "name": "fa22-bcs-103",
+        "email": "fa22-bcs-103@cuivehari.edu.pk",
+        "cnic": "1234567890123",
+        "address": "Vehari",
+        "phone": "0303 4567321",
+        "status": "approved",
+        "createdAt": "2026-05-06T08:25:05.000Z"
+      },
+      {
+        "id": "d3e2b607-a5b7-4890-84d0-7ab1a37f7dd6",
+        "machineId": "05768a0a-595c-4c7b-a4f9-c948a9df2d40",
+        "userId": "fe136a04-f8c6-4488-88cd-0b7a866306f6",
+        "startDate": "2026-05-30T19:00:00.000Z",
+        "endDate": "2026-05-31T19:00:00.000Z",
+        "durationDays": 2,
+        "location": "Test",
+        "name": "Smoke Test",
+        "email": "smoke+1778077477581@gmail.com",
+        "cnic": "1234567890123",
+        "address": "Test Address",
+        "phone": "03001234567",
+        "status": "pending",
+        "createdAt": "2026-05-06T14:24:37.000Z"
+      },
+      {
+        "id": "fde88551-6484-4d9f-976d-0ad4be208431",
+        "machineId": "c263ea85-eb7d-402c-9a24-fcd4c6349b7f",
+        "userId": "2eff2e5b-2771-46dc-8106-e9f776f6b7eb",
+        "startDate": "2026-04-06T19:00:00.000Z",
+        "endDate": "2026-04-07T19:00:00.000Z",
+        "durationDays": 2,
+        "location": "",
+        "name": "fa22-bcs-103",
+        "email": "fa22-bcs-103@cuivehari.edu.pk",
+        "cnic": "1234567890123",
+        "address": "Vehari",
+        "phone": "0303 4567321",
+        "status": "approved",
+        "createdAt": "2026-04-07T16:12:39.000Z"
+      }
+    ],
+    "knex_migrations": [
+      {
+        "id": 1,
+        "name": "20260504_create_bookings_table.js",
+        "batch": 1,
+        "migration_time": "2026-05-04T07:49:12.000Z"
+      },
+      {
+        "id": 2,
+        "name": "20260504_create_contacts_table.js",
+        "batch": 1,
+        "migration_time": "2026-05-04T07:49:12.000Z"
+      },
+      {
+        "id": 3,
+        "name": "20260504_create_machines_table.js",
+        "batch": 1,
+        "migration_time": "2026-05-04T07:49:12.000Z"
+      },
+      {
+        "id": 4,
+        "name": "20260504_create_users_table.js",
+        "batch": 1,
+        "migration_time": "2026-05-04T07:49:12.000Z"
+      }
+    ]
+  }
+}

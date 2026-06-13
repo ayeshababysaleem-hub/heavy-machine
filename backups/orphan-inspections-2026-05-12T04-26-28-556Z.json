@@ -1,0 +1,20 @@
+[
+  {
+    "id": "246a3ff2-73f1-4ceb-9db6-d6e021b5eb05",
+    "bookingId": "2355581f-ec6d-46db-a9f6-998984c45fb6",
+    "inspectedBy": "5a55f167-49dc-434f-a7f3-1622da411423",
+    "notes": "automated test",
+    "condition": "good",
+    "depositReturned": "0.00",
+    "createdAt": "2026-05-11T18:07:28.000Z"
+  },
+  {
+    "id": "eda607b2-83e4-440e-8f8c-bbbc634332e6",
+    "bookingId": "2355581f-ec6d-46db-a9f6-998984c45fb6",
+    "inspectedBy": "5a55f167-49dc-434f-a7f3-1622da411423",
+    "notes": "thanks",
+    "condition": "good",
+    "depositReturned": "200000.00",
+    "createdAt": "2026-05-11T18:08:44.000Z"
+  }
+]

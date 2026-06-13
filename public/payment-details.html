@@ -31,9 +31,9 @@
         <div style="margin-top:18px">
           <div id="methods" style="margin-bottom:12px">
             <p style="margin:6px 0 8px 0"><strong>Select Payment Method</strong></p>
-            <label style="display:block;margin-bottom:6px"><input type="radio" name="pmethod" value="card" /> Credit/Debit Card</label>
-            <label style="display:block;margin-bottom:6px"><input type="radio" name="pmethod" value="jazzcash" /> JazzCash</label>
-            <label style="display:block;margin-bottom:6px"><input type="radio" name="pmethod" value="easypaisa" /> EasyPaisa</label>
+            <label style="display:flex;align-items:center;gap:12px"><input type="radio" name="pmethod" value="jazzcash" checked /> <span>JazzCash</span></label>
+            <label style="display:flex;align-items:center;gap:12px"><input type="radio" name="pmethod" value="easypaisa" /> <span>EasyPaisa</span></label>
+            
           </div>
           <button id="confirmBtn" style="background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;padding:12px 20px;border-radius:10px;border:0;cursor:pointer">Confirm Payment</button>
           <a href="/booking.html" style="margin-left:12px;color:var(--muted)">Back to booking</a>
@@ -133,7 +133,9 @@
           const nameVal = booking.machineName || m.name || 'Unnamed machine';
           const modelVal = booking.machineModel || m.model || '';
           const days = Number(booking.durationDays) || 1;
+          const deposit = Number(booking.securityDeposit) || 0;
           const total = price * days;
+          const grandTotal = total + deposit;
           // Render only the requested fields (no customer info)
           details.innerHTML = `
             <label>Machine Name
@@ -151,6 +153,12 @@
             <label>Total Price
               <input id="totalInput" value="${formatPKR(total)}" disabled style="display:block;width:100%;padding:10px;margin-top:8px" />
             </label>
+            <label>Security Deposit
+              <input id="depositInput" value="${formatPKR(deposit)}" disabled style="display:block;width:100%;padding:10px;margin-top:8px" />
+            </label>
+            <label>Amount Due (Total + Deposit)
+              <input id="grandTotalInput" value="${formatPKR(grandTotal)}" disabled style="display:block;width:100%;padding:10px;margin-top:8px" />
+            </label>
           `;
         // enable confirm now
         confirmBtn.disabled = false;
@@ -162,6 +170,8 @@
             const newDays = Math.max(1, parseInt(durationInput.value || '1', 10));
             const newTotal = newDays * price;
             totalInput.value = formatPKR(newTotal);
+            const newGrand = newTotal + deposit;
+            const grandInput = document.getElementById('grandTotalInput'); if (grandInput) grandInput.value = formatPKR(newGrand);
           });
         }
 
@@ -171,6 +181,8 @@
           booking.paymentMethod = sel.value;
           // capture possibly-updated duration
           if (durationInput){ booking.durationDays = Number(durationInput.value) || 1 }
+          // ensure deposit preserved
+          booking.securityDeposit = deposit;
           // save booking for payment flow (sessionStorage is used by payment.html)
           try{ localStorage.setItem('pendingBooking', JSON.stringify(booking)); }catch(e){}
           try{ sessionStorage.setItem('pendingBooking', JSON.stringify(booking)); }catch(e){}

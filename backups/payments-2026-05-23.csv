@@ -1,0 +1,2 @@
+id,machineId,machineName,userId,customerName,customerEmail,startDate,endDate,durationDays,revenue,commission,net,securityDeposit,status,payment_status,payment_method,local_payment_id,sender_number,amount_cents
+"fde88551-6484-4d9f-976d-0ad4be208431","c263ea85-eb7d-402c-9a24-fcd4c6349b7f","Motor Grader","2eff2e5b-2771-46dc-8106-e9f776f6b7eb","fa22-bcs-103","fa22-bcs-103@cuivehari.edu.pk","Wed Apr 08 2026 00:00:00 GMT+0500 (Pakistan Standard Time)","Thu Apr 09 2026 00:00:00 GMT+0500 (Pakistan Standard Time)","2","110000","11000","99000","0","approved","unpaid","","","","0"

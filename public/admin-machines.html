@@ -106,7 +106,12 @@
       list.forEach(m=>{
         const tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.02)';
         const price = (typeof m.price!=='undefined' && m.price!==null && m.price!=='')? ('₨ '+Number(m.price).toFixed(2)) : '—';
-        tr.innerHTML = `<td style="padding:8px">${m.name||'-'}</td><td style="padding:8px">${m.ownerId||'-'}</td><td style="padding:8px">${m.status||'-'}</td><td style="padding:8px">${price}</td>`;
+        const statusText = (m.status || '').toString();
+        // map internal statuses to admin-friendly display
+        let statusDisplay = statusText;
+        if (statusText === 'approved') statusDisplay = 'Approved';
+        else if (statusText === 'booked') statusDisplay = 'Not available';
+        tr.innerHTML = `<td style="padding:8px">${m.name||'-'}</td><td style="padding:8px">${m.ownerId||'-'}</td><td style="padding:8px">${statusDisplay}</td><td style="padding:8px">${price}</td>`;
         const actionsTd = document.createElement('td'); actionsTd.style.padding='8px';
         const approveBtn = document.createElement('button'); approveBtn.textContent='Approve'; approveBtn.style.marginRight='8px'; approveBtn.addEventListener('click', async ()=>{
           const token = localStorage.getItem('token'); if (!token) return await showAlert('Error','Not authorized');
@@ -114,7 +119,7 @@
             const r = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'approve' }) });
             if (!r.ok) return await showAlert('Error','Failed to approve');
             // update status cell in-place to give immediate feedback
-            try{ const statusCell = tr.querySelector('td:nth-child(3)'); if (statusCell) statusCell.textContent = 'approved'; }catch(e){}
+            try{ const statusCell = tr.querySelector('td:nth-child(3)'); if (statusCell) statusCell.textContent = 'Approved'; }catch(e){}
             await showAlert('Success','Machine approved');
           }catch(err){ console.error(err); await showAlert('Error','Network error') }
         });
@@ -124,7 +129,7 @@
             const r = await fetch('/api/machines/'+m.id+'/verify', { method:'POST', headers:{ 'content-type':'application/json','authorization':'Bearer '+token }, body: JSON.stringify({ action: 'reject' }) });
             if (!r.ok) return await showAlert('Error','Failed to reject');
             // update status cell in-place to give immediate feedback
-            try{ const statusCell = tr.querySelector('td:nth-child(3)'); if (statusCell) statusCell.textContent = 'rejected'; }catch(e){}
+            try{ const statusCell = tr.querySelector('td:nth-child(3)'); if (statusCell) statusCell.textContent = 'Rejected'; }catch(e){}
             await showAlert('Success','Machine rejected');
           }catch(err){ console.error(err); await showAlert('Error','Network error') }
         });

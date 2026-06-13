@@ -54,8 +54,10 @@
       btn.disabled = true;
       // basic client-side validation
       if (!data.name || !data.email || !data.password || !data.role) { msg.textContent = 'Please fill required fields.'; btn.disabled = false; return; }
-      // name must include letters and not be only numbers
-      if (data.name.trim().length < 2 || /^\d+$/.test(data.name.trim()) || !/[A-Za-z]/.test(data.name)) { msg.textContent = 'Please enter a valid name (letters required).'; btn.disabled = false; return; }
+      // Name rules: at least 2 characters, letters and spaces only (no digits or symbols)
+      const nameTrim = String(data.name || '').trim();
+      if (nameTrim.length < 2) { msg.textContent = 'Please enter a valid name (letters only, e.g. Ali, Ayesha).'; btn.disabled = false; return; }
+      if (!/^[A-Za-z ]+$/.test(nameTrim)) { msg.textContent = 'Please enter a valid name (letters only, e.g. Ali, Ayesha).'; btn.disabled = false; return; }
       if (data.password.length < 6) { msg.textContent = 'Password must be at least 6 characters.'; btn.disabled = false; return; }
       
       // Check if email is already registered and verified
@@ -93,9 +95,10 @@
           btn.disabled = false;
           return;
         }
-        // Do not automatically open the verification email page.
-        // Redirect user to the login page and show a notice there.
-        location = '/login.html?registered=1';
+        // If the server warns that the email domain couldn't be verified,
+        // pass that info to the login page so we can show a friendly notice.
+        const redirectQuery = json && json.emailDomainCheckFailed ? '?registered=1&domain=unverified' : '?registered=1';
+        location = '/login.html' + redirectQuery;
       }catch(err){
         msg.textContent = 'Network error: ' + (err.message||err);
         btn.disabled = false;

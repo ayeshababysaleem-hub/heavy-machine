@@ -21,8 +21,7 @@
     <main class="container" style="padding:40px 20px;max-width:1200px;margin:0 auto">
       <div class="card">
         <h2 style="margin-top:0">My Bookings</h2>
-        <p>All bookings for your machines</p>
-        <div id="bookingsList" style="margin-top:16px">Loading...</div>
+        <div id="bookingsList" style="margin-top:16px">All Bookings from machines</div>
       </div>
     </main>
 
@@ -118,7 +117,7 @@
 
         // filter bookings to show only those for owner's machines
         const ownerBookings = bookings.filter(b => ownerMachineIds.includes(b.machineId));
-        if (ownerBookings.length === 0){ list.innerHTML = '<p>No bookings for your machines</p>'; return; }
+        if (ownerBookings.length === 0){ list.innerHTML = '<p>No bookings from machines</p>'; return; }
 
         // render bookings as a table
         const table = document.createElement('table');
@@ -126,7 +125,7 @@
         table.style.borderCollapse = 'collapse';
         table.style.marginTop = '12px';
         const thead = document.createElement('thead');
-        thead.innerHTML = '<tr style="border-bottom:1px solid rgba(255,255,255,0.1)"><th style="text-align:left;padding:12px">Machine ID</th><th style="text-align:left;padding:12px">Customer</th><th style="text-align:left;padding:12px">Start Date</th><th style="text-align:left;padding:12px">End Date</th><th style="text-align:left;padding:12px">Duration</th><th style="text-align:left;padding:12px">Phone</th><th style="text-align:left;padding:12px">Status</th><th style="text-align:left;padding:12px">Actions</th></tr>';
+        thead.innerHTML = '<tr style="border-bottom:1px solid rgba(255,255,255,0.1)"><th style="text-align:left;padding:12px">Machine ID</th><th style="text-align:left;padding:12px">Customer</th><th style="text-align:left;padding:12px">Customer Account</th><th style="text-align:left;padding:12px">Start Date</th><th style="text-align:left;padding:12px">End Date</th><th style="text-align:left;padding:12px">Duration</th><th style="text-align:left;padding:12px">Phone</th><th style="text-align:left;padding:12px">Status</th><th style="text-align:left;padding:12px">Actions</th></tr>';
         table.appendChild(thead);
 
         const tbody = document.createElement('tbody');
@@ -136,6 +135,7 @@
           tr.innerHTML = `
             <td style="padding:12px"><code style="background:rgba(255,255,255,0.05);padding:4px 8px;border-radius:4px;font-size:0.85rem">${b.machineId.slice(0,8)}...</code></td>
             <td style="padding:12px">${b.name || '—'}</td>
+            <td style="padding:12px">${b.customerAccount || '—'}</td>
             <td style="padding:12px">${b.startDate}</td>
             <td style="padding:12px">${b.endDate}</td>
             <td style="padding:12px">${b.durationDays} day(s)</td>

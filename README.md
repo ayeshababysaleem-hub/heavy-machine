@@ -1,5 +1,7 @@
 # Auth Demo (Registration, Login, Roles, Email Verification)
 
+[![CI Smoke Tests](https://github.com/<owner>/<repo>/actions/workflows/smoke-tests.yml/badge.svg)](https://github.com/<owner>/<repo>/actions/workflows/smoke-tests.yml)
+
 Quick local demo using Node.js + Express. Features:
 - Registration with role selection (Customer, Owner, Admin)
 - Password hashing with bcryptjs

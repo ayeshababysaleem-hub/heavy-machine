@@ -95,6 +95,18 @@
         </div>
       </div>
     </div>
+    <!-- Prompt Modal -->
+    <div id="promptModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;display:none">
+      <div style="background:#0b1220;border-radius:14px;padding:18px;max-width:640px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08)">
+        <h3 id="promptTitle" style="margin:0 0 12px 0;color:#e6eef8">Action</h3>
+        <p id="promptMessage" style="margin:0 0 12px 0;color:#94a3b8;line-height:1.4">Message</p>
+        <input id="promptInput" placeholder="" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:#e6eef8;margin-top:8px" />
+        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:12px">
+          <button id="promptCancel" style="padding:10px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#e6eef8;cursor:pointer;font-weight:600;transition:all 0.2s">Cancel</button>
+          <button id="promptOk" style="padding:10px 18px;border-radius:8px;border:0;background:linear-gradient(90deg,#49a6ff,#2d8ff6);color:#fff;cursor:pointer;font-weight:600;transition:all 0.2s">Verify</button>
+        </div>
+      </div>
+    </div>
   </div>
   <script>
     // Format number as PKR currency
@@ -133,7 +145,7 @@
     }
 
     // Custom confirmation modal
-    function showConfirm(title, message) {
+    function showConfirm(title, message, confirmText) {
       return new Promise((resolve) => {
         const modal = document.getElementById('confirmModal');
         const titleEl = document.getElementById('confirmTitle');
@@ -143,6 +155,7 @@
         
         titleEl.textContent = title;
         msgEl.textContent = message;
+        if (confirmText) okBtn.textContent = confirmText;
         modal.style.display = 'flex';
         
         const handleOk = () => {
@@ -166,6 +179,32 @@
         okBtn.addEventListener('click', handleOk);
         cancelBtn.addEventListener('click', handleCancel);
         document.addEventListener('keydown', handleEscape);
+      });
+    }
+
+    // Prompt modal (returns string or null)
+    function showPrompt(title, message, placeholder, confirmText){
+      return new Promise((resolve) => {
+        const modal = document.getElementById('promptModal');
+        const titleEl = document.getElementById('promptTitle');
+        const msgEl = document.getElementById('promptMessage');
+        const input = document.getElementById('promptInput');
+        const okBtn = document.getElementById('promptOk');
+        const cancelBtn = document.getElementById('promptCancel');
+        titleEl.textContent = title || 'Action';
+        msgEl.textContent = message || '';
+        input.value = '';
+        input.placeholder = placeholder || '';
+        okBtn.textContent = confirmText || 'Verify';
+        modal.style.display = 'flex';
+        const handleOk = () => { const val = input.value.trim(); cleanup(); resolve(val === '' ? '' : val); };
+        const handleCancel = () => { cleanup(); resolve(null); };
+        const cleanup = () => { modal.style.display = 'none'; okBtn.removeEventListener('click', handleOk); cancelBtn.removeEventListener('click', handleCancel); document.removeEventListener('keydown', handleEscape); };
+        const handleEscape = (e) => { if (e.key === 'Escape') handleCancel(); };
+        okBtn.addEventListener('click', handleOk);
+        cancelBtn.addEventListener('click', handleCancel);
+        document.addEventListener('keydown', handleEscape);
+        input.focus();
       });
     }
 
@@ -247,6 +286,16 @@
             <h4>My Payments</h4>
             <p>Track payments received</p>
           </div>
+          <div class="admin-card" data-action="own-contacts">
+            <div class="admin-card-icon">📇</div>
+            <h4>Contacts</h4>
+            <p>View messages and inquiries</p>
+          </div>
+          <div class="admin-card" data-action="account-settings">
+            <div class="admin-card-icon">⚙️</div>
+            <h4>Account</h4>
+            <p>Account settings and info</p>
+          </div>
         `;
         const ownerBar = document.getElementById('adminBar');
         if (ownerBar) ownerBar.innerHTML = `<div class="admin-bar" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:stretch">${ownerCardsHtml}</div>`;
@@ -273,6 +322,10 @@
                 window.location = '/owner-bookings.html';
               } else if (id === 'own-payments') {
                 window.location = '/owner-payments.html';
+              } else if (id === 'own-contacts') {
+                window.location = '/owner-contacts.html';
+              } else if (id === 'account-settings') {
+                window.location = '/edit-account.html';
               }
             });
           });
@@ -308,21 +361,42 @@
             <h4>Bookings</h4>
             <p>View and manage bookings</p>
           </div>
-          <div class="admin-card" data-action="adm-contacts">
-            <div class="admin-card-icon">✉️</div>
-            <h4>Contacts</h4>
-            <p>User messages</p>
-          </div>
+          <!-- Inspections card removed -->
+          <!-- Contacts card removed from Admin dashboard by request -->
           <div class="admin-card" data-action="adm-payments">
             <div class="admin-card-icon">💳</div>
             <h4>Payments</h4>
             <p>View and manage payments</p>
+          </div>
+          <div class="admin-card" data-action="adm-reports">
+            <div class="admin-card-icon">📊</div>
+            <h4>Reports</h4>
+            <p>Generate and download reports</p>
+          </div>
+          <div class="admin-card" data-action="adm-account">
+            <div class="admin-card-icon">⚙️</div>
+            <h4>Account</h4>
+            <p>Account settings and info</p>
+          </div>
+          <div class="admin-card" data-action="adm-deposits">
+            <div class="admin-card-icon">🔒</div>
+            <h4>Security Deposit</h4>
+            <p id="adminDepositSummary">Loading...</p>
           </div>
         `;
 
         const adminBar = document.getElementById('adminBar');
         // Render admin cards in a 3-column grid so first three appear on one line
         if (adminBar) adminBar.innerHTML = `<div class="admin-bar" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:stretch">${cardsHtml}</div>`;
+
+        // ensure Contacts icon is not shown for Admin (defensive for cached DOM)
+        if (adminBar){
+          const admContactsIcon = adminBar.querySelector('[data-action="adm-contacts"] .admin-card-icon');
+          if (admContactsIcon) admContactsIcon.textContent = '';
+          // remove contacts card element if still present
+          const admContactsCard = adminBar.querySelector('[data-action="adm-contacts"]');
+          if (admContactsCard && admContactsCard.parentNode) admContactsCard.parentNode.removeChild(admContactsCard);
+        }
 
         // keep admin summary and list inside the dashboard card
         const adminMain = document.createElement('div');
@@ -354,6 +428,15 @@
               } else if (id === 'adm-bookings') {
                 // navigate to bookings admin page
                 window.location = '/admin-bookings.html';
+              } else if (id === 'adm-deposits') {
+                // navigate to deposits-only admin page
+                window.location = '/admin-deposits.html';
+              } else if (id === 'adm-account') {
+                // navigate to account settings page
+                window.location = '/edit-account.html';
+              } else if (id === 'adm-reports') {
+                // navigate to reports page
+                window.location = '/admin-reports.html';
               } else if (id === 'adm-owners' || id === 'adm-customers' || id === 'adm-allusers') {
                 // navigate to owners/customers/allusers admin pages
                 if (id === 'adm-owners') window.location = '/admin-owners.html';
@@ -409,6 +492,20 @@
 
         // attach handlers now that admin bar has been rendered
         attachAdminHandlers();
+        // fetch admin payments to compute total security deposit and display it in the deposit card
+        (async function fetchDepositTotal(){
+          try{
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            const r = await fetch('/api/admin/payments', { headers: { Authorization: 'Bearer ' + token } });
+            if (!r.ok) return;
+            const j = await r.json();
+            const payments = j.data || [];
+            let totalDeposit = 0;
+            for (const p of payments){ totalDeposit += Number(p.securityDeposit || p.deposit || p.depositAmount) || 0; }
+            const el = document.getElementById('adminDepositSummary'); if (el) el.textContent = formatPKR(totalDeposit);
+          }catch(e){ console.warn('Failed to load deposit total', e); const el = document.getElementById('adminDepositSummary'); if (el) el.textContent = '—'; }
+        })();
         // Ensure All Users navigates to a separate admin page for full details
         const allUsersCard = document.querySelector('#adminBar .admin-card[data-action="adm-allusers"]');
         if (allUsersCard) {
@@ -463,12 +560,11 @@
               if (!token) return await showAlert('Error', 'Not authorized. Please log in again.');
               try{
                 let body = {};
-                if (u.role === 'Customer') {
-                  const cnic = prompt('Enter CNIC for this customer (required)');
-                  if (cnic === null) return; // cancelled
-                  if (!cnic) return await showAlert('Error', 'CNIC is required to verify customers');
-                  body.cnic = cnic;
-                }
+                // show modal to optionally collect CNIC (optional) and confirm verification
+                const promptMessage = `Verify ${u.name || u.email}? This will mark the account as verified.`;
+                const cnic = await showPrompt('Verify User', promptMessage, 'CNIC (optional)', 'Verify');
+                if (cnic === null) return; // cancelled
+                if (cnic) body.cnic = cnic;
                 const r = await fetch('/api/admin/users/'+u.id+'/verify', { method:'POST', headers: { 'authorization': 'Bearer '+token, 'content-type':'application/json' }, body: JSON.stringify(body) });
                 if (!r.ok){ const t = await r.text().catch(()=>''); return await showAlert('Error', 'Failed to verify user: '+r.status+' '+t) }
                 await showAlert('Success', 'User verified successfully');
@@ -480,7 +576,7 @@
             // delete button
             const delBtn = document.createElement('button'); delBtn.textContent = 'Delete'; delBtn.style.marginLeft='8px';
             delBtn.addEventListener('click', async ()=>{
-              const ok = await showConfirm('Delete User', 'Delete user '+(u.email||u.name)+'? This action cannot be undone.'); if (!ok) return;
+                const ok = await showConfirm('Delete User', 'Delete user '+(u.email||u.name)+'? This action cannot be undone.', 'Delete'); if (!ok) return;
               const token = localStorage.getItem('token'); if (!token) return alert('Not authorized');
               try{
                 const r = await fetch('/api/admin/users/'+u.id, { method: 'DELETE', headers: { 'authorization':'Bearer '+token } });
@@ -607,17 +703,19 @@
         list.forEach(m => {
           const d = document.createElement('div');
           d.className = 'card';
-          let statusText = '';
-          let statusColor = '';
-          if (m.status === 'approved') { statusText = 'Available'; statusColor = '#16a34a'; }
-          else if (m.status === 'booked') { statusText = 'Not available'; statusColor = '#ef4444'; }
-          else if (m.status === 'pending') { statusText = 'Pending'; statusColor = '#f59e0b'; }
-          else if (m.status === 'rejected') { statusText = 'Rejected'; statusColor = '#6b7280'; }
-          else { statusText = m.status || ''; statusColor = '#6b7280'; }
-          let statusBadge = '';
-            if (statusText) {
-            statusBadge = `<div style="font-size:0.8rem;padding:6px;border-radius:6px;background:${statusColor};display:inline-block;color:#fff;margin-bottom:8px">${statusText}</div>`;
-          }
+          // Only logged-in Customers may book; guests can view availability but cannot book
+          const isCustomer = currentUser && currentUser.role === 'Customer';
+          const isGuest = !currentUser;
+          const isViewerCustomerOrGuest = isGuest || isCustomer;
+          // Show real machine status to viewers, but present 'approved' as 'Available' to customers/guests
+          let statusText = m.status || '';
+          if (statusText === 'approved' && isViewerCustomerOrGuest) statusText = 'Available';
+          let statusColor = '#6b7280';
+          if (statusText === 'Available' || statusText === 'approved') statusColor = '#16a34a';
+          else if (statusText === 'booked') statusColor = '#ef4444';
+          else if (statusText === 'pending') statusColor = '#f59e0b';
+          else if (statusText === 'rejected') statusColor = '#6b7280';
+          let statusBadge = statusText ? `<div style="font-size:0.8rem;padding:6px;border-radius:6px;background:${statusColor};display:inline-block;color:#fff;margin-bottom:8px">${statusText}</div>` : '';
           const priceText = (typeof m.price !== 'undefined' && m.price !== null && m.price !== '') ? ('₨ ' + Number(m.price).toFixed(2)) : '';
           let priceHtml = '';
           if (priceText) {
@@ -625,24 +723,20 @@
           }
           d.innerHTML = `${statusBadge}<img src="${m.image}" alt="${m.name}" style="width:100%;border-radius:8px;margin-bottom:8px" /><h4>${m.name}</h4>${priceHtml}<p style="color:#6b7280">${m.description}</p><p style="color:#94a3b8;margin-top:6px;font-size:0.95rem">${m.type} • ${m.model||''} • ${m.location||''}</p>`;
           // owner/admin controls
-          // booking button for customers only (not owner/admin)
-          // booking button: customers can book; guests see a login prompt button
-          const isAvailable = (m.status || 'approved') === 'approved';
-          if (isAvailable) {
-            // Only show Book button to logged-in Customers (not owners). Guests won't see booking controls.
-            if (currentUser && currentUser.role === 'Customer' && currentUser.id !== m.ownerId) {
-              const bookBtn = document.createElement('button');
-              bookBtn.textContent = 'Book';
-              bookBtn.style.marginTop = '8px';
-              bookBtn.style.marginRight = '6px';
-              bookBtn.addEventListener('click', ()=>{
-                const params = new URLSearchParams({ machineId: m.id });
-                window.location = '/booking.html?' + params.toString();
-              });
-              d.appendChild(bookBtn);
-            }
-          } else {
-            const na = document.createElement('div'); na.textContent = 'Not available for booking'; na.style.marginTop='8px'; na.style.color='#ef4444'; d.appendChild(na);
+          // booking button for Customers only (not owner/admin or guests)
+          const isAvailable = ((m.status || 'approved') === 'approved');
+          const isOwner = currentUser && currentUser.id === m.ownerId;
+          const showBookButton = isCustomer && isAvailable && !isOwner;
+          if (showBookButton) {
+            const bookBtn = document.createElement('button');
+            bookBtn.textContent = 'Book';
+            bookBtn.style.marginTop = '8px';
+            bookBtn.style.marginRight = '6px';
+            bookBtn.addEventListener('click', ()=>{
+              const params = new URLSearchParams({ machineId: m.id });
+              window.location = '/booking.html?' + params.toString();
+            });
+            d.appendChild(bookBtn);
           }
           if (currentUser && currentUser.id === m.ownerId){
             const btns = document.createElement('div');

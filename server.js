@@ -108,9 +108,6 @@ async function getContacts(){ if (!knex) throw new Error('Database not configure
 async function createContact(row){ if (!knex) throw new Error('Database not configured'); row.createdAt = toMySQLDate(row.createdAt || new Date()); return await knex('contacts').insert(row); }
 async function deleteContact(id){ if (!knex) throw new Error('Database not configured'); return await knex('contacts').where({ id }).del(); }
 
-async function getContactReplies(){ if (!knex) throw new Error('Database not configured'); return await knex('contact_replies').select('*'); }
-async function createContactReply(row){ if (!knex) throw new Error('Database not configured'); row.createdAt = toMySQLDate(row.createdAt || new Date()); return await knex('contact_replies').insert(row); }
-
 // Setup multer for image uploads
 const imagesDir = path.join(__dirname, 'public', 'images');
 if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
@@ -680,13 +677,7 @@ app.post('/api/admin/contacts/:id/reply', authMiddleware, roleRequired('Admin'),
     const idx = contacts.findIndex(c => c.id === id);
     if (idx === -1) return res.status(404).json({ error: 'Not found' });
     const contact = contacts[idx];
-    // prevent duplicate replies
-    const existing = await knex('contact_replies').where({ contactId: id }).first();
-    if (existing) return res.status(400).json({ error: 'Already replied' });
-    // persist reply in contact_replies
-    try{
-      await createContactReply({ id: uuidv4(), contactId: id, repliedBy: req.user.id, message: String(message), createdAt: new Date() });
-    }catch(pe){ console.warn('Failed to persist contact reply', pe && pe.message ? pe.message : pe); }
+    // Do NOT persist reply or repliedAt columns — they were removed.
     // Respond immediately so client isn't blocked by email delivery
     res.json({ ok: true });
     // send email asynchronously (fire-and-forget). Log errors but do not block response.
@@ -716,10 +707,8 @@ app.post('/api/admin/contacts/:id/reply', authMiddleware, roleRequired('Admin'),
 app.get('/api/owner/contacts', authMiddleware, roleRequired('Owner'), async (req, res) => {
   try{
     const contacts = await getContacts();
-    const replies = await getContactReplies().catch(()=>[]);
-    const repliedIds = new Set((replies||[]).map(r=>r.contactId));
-    // For owners include a `replied` flag so UI can disable replying if already replied
-    const safe = (contacts || []).map(c => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, message: c.message, createdAt: c.createdAt, replied: repliedIds.has(c.id) }));
+    // For owners we return the same messages but without reply metadata to keep it minimal
+    const safe = (contacts || []).map(c => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, message: c.message, createdAt: c.createdAt }));
     res.json({ data: safe, total: safe.length });
   }catch(e){ console.error('Failed to read owner contacts', e); res.status(500).json({ error: 'Failed to read contacts' }) }
 });
@@ -748,11 +737,7 @@ app.post('/api/owner/contacts/:id/reply', authMiddleware, roleRequired('Owner'),
     if (idx === -1) return res.status(404).json({ error: 'Not found' });
     const contact = contacts[idx];
     try{
-      // prevent duplicate replies
-      const existing = await knex('contact_replies').where({ contactId: id }).first();
-      if (existing) return res.status(400).json({ error: 'Already replied' });
-      // persist reply
-      try{ await createContactReply({ id: uuidv4(), contactId: id, repliedBy: req.user.id, message: String(message), createdAt: new Date() }); }catch(pe){ console.warn('Failed to persist contact reply', pe && pe.message ? pe.message : pe); }
+      // Do NOT persist reply/repliedAt — columns removed.
       // respond immediately so client isn't blocked by email delivery
       res.json({ ok: true });
       // send email asynchronously (fire-and-forget). Log errors but do not block response.

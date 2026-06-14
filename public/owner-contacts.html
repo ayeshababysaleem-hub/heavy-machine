@@ -88,6 +88,9 @@
         const handleEscape = (e) => { if (e.key === 'Escape') handleCancel(); };
         okBtn.addEventListener('click', handleOk);
         cancelBtn.addEventListener('click', handleCancel);
+        // Fallback: also assign onclick in case addEventListener is blocked by the environment
+        okBtn.onclick = handleOk;
+        cancelBtn.onclick = handleCancel;
         document.addEventListener('keydown', handleEscape);
         input.focus();
       });

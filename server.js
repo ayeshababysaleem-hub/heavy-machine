@@ -650,7 +650,7 @@ app.post('/api/admin/inspections/:bookingId', authMiddleware, roleRequired('Admi
 app.get('/api/admin/contacts', authMiddleware, roleRequired('Admin'), async (req, res) => {
   try{
     const contacts = await getContacts();
-    res.json({ data: contacts, total: contacts.length });
+       res.json({ data: contacts, total: contacts.length });
   }catch(e){ console.error('Failed to read contacts', e); res.status(500).json({ error: 'Failed to read contacts' }) }
 });
 
@@ -677,35 +677,26 @@ app.post('/api/admin/contacts/:id/reply', authMiddleware, roleRequired('Admin'),
     const idx = contacts.findIndex(c => c.id === id);
     if (idx === -1) return res.status(404).json({ error: 'Not found' });
     const contact = contacts[idx];
-    // send email using transporter (nodemailer)
-    try{
-      // mark contact as replied in DB first so UI can be updated promptly
-      contact.reply = String(message);
-      contact.repliedAt = toMySQLDate(new Date());
-      await knex('contacts').where({ id }).update({ reply: contact.reply, repliedAt: contact.repliedAt });
-      // respond immediately so client isn't blocked by email delivery
-      res.json({ ok: true });
-      // send email asynchronously (fire-and-forget). Log errors but do not block response.
-      (async () => {
-        try{
-          const info = await transporter.sendMail({
-            from: 'no-reply@example.com',
-            to: contact.email,
-            subject: 'Reply to your message',
-            text: String(message),
-            html: `<p>${String(message).replace(/\n/g,'<br/>')}</p>`
-          });
-          const preview = typeof nodemailer.getTestMessageUrl === 'function' ? nodemailer.getTestMessageUrl(info) : null;
-          console.log('Reply email sent (owner) for', id, 'preview:', preview);
-        }catch(err){
-          console.error('Background reply email send failed (owner)', err);
-        }
-      })();
-      return;
-    }catch(err){
-      console.error('Failed to reply (owner)', err);
-      return res.status(500).json({ error: 'Failed to reply', detail: err && err.message ? err.message : String(err) });
-    }
+    // Do NOT persist reply or repliedAt columns — they were removed.
+    // Respond immediately so client isn't blocked by email delivery
+    res.json({ ok: true });
+    // send email asynchronously (fire-and-forget). Log errors but do not block response.
+    (async () => {
+      try{
+        const info = await transporter.sendMail({
+          from: 'no-reply@example.com',
+          to: contact.email,
+          subject: 'Reply to your message',
+          text: String(message),
+          html: `<p>${String(message).replace(/\n/g,'<br/>')}</p>`
+        });
+        const preview = typeof nodemailer.getTestMessageUrl === 'function' ? nodemailer.getTestMessageUrl(info) : null;
+        console.log('Reply email sent (admin) for', id, 'preview:', preview);
+      }catch(err){
+        console.error('Background reply email send failed (admin)', err);
+      }
+    })();
+    return;
   }catch(e){
     console.error('Failed to reply', e);
     res.status(500).json({ error: 'Failed to reply' });
@@ -746,10 +737,7 @@ app.post('/api/owner/contacts/:id/reply', authMiddleware, roleRequired('Owner'),
     if (idx === -1) return res.status(404).json({ error: 'Not found' });
     const contact = contacts[idx];
     try{
-      // mark contact as replied in DB first so UI can be updated promptly
-      contact.reply = String(message);
-      contact.repliedAt = toMySQLDate(new Date());
-      await knex('contacts').where({ id }).update({ reply: contact.reply, repliedAt: contact.repliedAt });
+      // Do NOT persist reply/repliedAt — columns removed.
       // respond immediately so client isn't blocked by email delivery
       res.json({ ok: true });
       // send email asynchronously (fire-and-forget). Log errors but do not block response.
@@ -763,14 +751,14 @@ app.post('/api/owner/contacts/:id/reply', authMiddleware, roleRequired('Owner'),
             html: `<p>${String(message).replace(/\n/g,'<br/>')}</p>`
           });
           const preview = typeof nodemailer.getTestMessageUrl === 'function' ? nodemailer.getTestMessageUrl(info) : null;
-          console.log('Reply email sent (admin) for', id, 'preview:', preview);
+          console.log('Reply email sent (owner) for', id, 'preview:', preview);
         }catch(err){
-          console.error('Background reply email send failed (admin)', err);
+          console.error('Background reply email send failed (owner)', err);
         }
       })();
       return;
     }catch(err){
-      console.error('Failed to reply contact (admin)', err);
+      console.error('Failed to reply contact (owner)', err);
       return res.status(500).json({ error: 'Failed to send reply', detail: err && err.message ? err.message : String(err) });
     }
   }catch(e){ console.error('Failed to reply contact (owner)', e); res.status(500).json({ error: 'Failed' }) }

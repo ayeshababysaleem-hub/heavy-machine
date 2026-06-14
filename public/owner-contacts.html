@@ -140,7 +140,7 @@
       const out = document.getElementById('contactsList'); out.innerHTML = '';
       if (!list || list.length === 0){ out.textContent = 'No messages found.'; return }
       const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse';
-      const thead = document.createElement('thead'); thead.innerHTML = '<tr><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Email</th><th style="text-align:left;padding:8px">Phone</th><th style="text-align:left;padding:8px">Message</th><th style="text-align:left;padding:8px">Reply</th><th style="text-align:left;padding:8px">Replied</th><th style="text-align:left;padding:8px">Received</th><th style="text-align:left;padding:8px">Actions</th></tr>';
+      const thead = document.createElement('thead'); thead.innerHTML = '<tr><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Email</th><th style="text-align:left;padding:8px">Phone</th><th style="text-align:left;padding:8px">Message</th><th style="text-align:left;padding:8px">Received</th><th style="text-align:left;padding:8px">Actions</th></tr>';
       table.appendChild(thead);
       const tbody = document.createElement('tbody');
       list.forEach(c => {
@@ -178,7 +178,7 @@
         });
 
         actionsTd.appendChild(replyBtn); actionsTd.appendChild(delBtn);
-        tr.innerHTML = `<td style="padding:8px">${c.name||'-'}</td><td style="padding:8px">${c.email}</td><td style="padding:8px">${c.phone}</td><td style="padding:8px">${c.message}</td><td style="padding:8px">${c.reply||''}</td><td style="padding:8px">${c.repliedAt||''}</td><td style="padding:8px">${c.createdAt}</td>`;
+        tr.innerHTML = `<td style="padding:8px">${c.name||'-'}</td><td style="padding:8px">${c.email}</td><td style="padding:8px">${c.phone}</td><td style="padding:8px">${c.message}</td><td style="padding:8px">${c.createdAt}</td>`;
         tr.appendChild(actionsTd);
         tbody.appendChild(tr);
       });

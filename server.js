@@ -122,19 +122,39 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 let transporter;
 async function initMailer() {
   try {
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: testAccount.smtp.host,
-      port: testAccount.smtp.port,
-      secure: testAccount.smtp.secure,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
-    console.log('Nodemailer configured (ethereal).');
+    // Prefer real SMTP when configured via environment variables
+    if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
+        secure: String(process.env.SMTP_SECURE || '').toLowerCase() === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS || ''
+        }
+      });
+      console.log('Nodemailer configured (SMTP).');
+      return;
+    }
+
+    // If explicitly requested, use Ethereal test account (only when USE_ETHEREAL=1)
+    if (String(process.env.USE_ETHEREAL || '').trim() === '1') {
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: testAccount.smtp.host,
+        port: testAccount.smtp.port,
+        secure: testAccount.smtp.secure,
+        auth: { user: testAccount.user, pass: testAccount.pass }
+      });
+      console.log('Nodemailer configured (ethereal).');
+      return;
+    }
+
+    // Default: do not attempt to create test accounts — use a console/stream transport
+    transporter = nodemailer.createTransport({ streamTransport: true, newline: 'unix' });
+    console.log('Nodemailer configured (console transport).');
   } catch (err) {
-    console.error('Failed to create test account, using console transport.', err);
+    console.error('Failed to initialize mailer — using console transport.', err && err.message ? err.message : err);
     transporter = nodemailer.createTransport({ streamTransport: true, newline: 'unix' });
   }
 }

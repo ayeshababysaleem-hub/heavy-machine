@@ -159,8 +159,12 @@
             if (!r.ok){ const t = await r.text().catch(()=>'' ); console.error('Reply failed', r.status, t); return await showAlert('Error','Failed to send reply: '+r.status+' '+t) }
             const j = await r.json().catch(()=>({}));
             console.log('Reply success', j);
+            // Update UI: mark this message as replied (disable Reply button and show 'Reply sent')
+            replyBtn.textContent = 'Reply sent';
+            replyBtn.disabled = true;
+            replyBtn.style.opacity = '0.6';
+            replyBtn.style.cursor = 'default';
             await showAlert('Success','Reply sent');
-            loadContacts();
           }catch(err){ console.error('Network error while sending reply', err); await showAlert('Error','Network error while sending reply') }
         });
 

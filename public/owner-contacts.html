@@ -147,6 +147,7 @@
         const tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.02)';
         const actionsTd = document.createElement('td'); actionsTd.style.padding='8px';
         const replyBtn = document.createElement('button'); replyBtn.textContent = 'Reply'; replyBtn.style.marginRight='8px';
+        if (c.replied) { replyBtn.textContent = 'Reply sent'; replyBtn.disabled = true; replyBtn.style.opacity='0.6'; replyBtn.style.cursor='default'; }
         const delBtn = document.createElement('button'); delBtn.textContent = 'Delete';
 
         replyBtn.addEventListener('click', async ()=>{

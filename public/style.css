@@ -17,10 +17,10 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica
 /* make header overlay so it doesn't create extra flow spacing under the hero */
 .container{max-width:1200px;margin:0 auto;padding:20px}
 header.site-header{background:transparent;padding:18px 24px;position:static}
-/* layout header: brand on left, nav on the right */
-header.site-header .container{display:flex;justify-content:space-between;align-items:center}
-.brand{font-weight:800;font-size:1.25rem;letter-spacing:0.2px;display:flex;align-items:center;gap:8px}
-.site-nav{margin-top:0;display:flex;gap:18px;align-items:center}
+/* layout header as a flex row so we can position brand and nav */
+header.site-header > .container{display:flex;align-items:center;gap:12px}
+.brand{font-weight:800;font-size:1.25rem;letter-spacing:0.2px;order:2;margin-left:auto}
+.site-nav{margin-top:0;display:flex;gap:14px;align-items:center;order:1}
 .site-nav a{color:var(--text);text-decoration:none;padding:8px 12px;border-radius:8px;transition:all .18s ease}
 .site-nav a:hover{background:rgba(255,255,255,0.03);transform:translateY(-2px)}
 

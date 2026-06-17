@@ -13,10 +13,12 @@
 
 *{box-sizing:border-box}
 body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.5;margin:0;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
-.site{min-height:100vh;display:flex;flex-direction:column;background:var(--bg-accent);padding-bottom:48px;position:relative;padding-top:72px}
-/* Fix header to top so brand appears in the top-left corner */
-header.site-header{background:transparent;padding:18px 24px;position:fixed;top:0;left:0;width:100%;z-index:1200}
+.site{min-height:100vh;display:flex;flex-direction:column;background:var(--bg-accent);padding-bottom:48px;position:relative}
+/* make header overlay so it doesn't create extra flow spacing under the hero */
 .container{max-width:1200px;margin:0 auto;padding:20px}
+/* Layout: place brand left and nav right in the header */
+header.site-header .container{display:flex;justify-content:space-between;align-items:center}
+header.site-header{background:transparent;padding:18px 24px;position:static}
 .brand{font-weight:800;font-size:1.25rem;letter-spacing:0.2px}
 .site-nav{margin-top:6px;display:flex;gap:14px;align-items:center}
 .site-nav a{color:var(--text);text-decoration:none;padding:8px 12px;border-radius:8px;transition:all .18s ease}
